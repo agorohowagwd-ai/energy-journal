@@ -1,65 +1,53 @@
 export default function Sidebar({
-    page,
-    setPage,
-    logout,
-  }) {
-    const item =
-      "w-full text-left px-4 py-3 rounded-xl hover:bg-orange-100 transition"
-  
-    return (
-      <div className="w-64 h-screen bg-white border-r border-gray-100 p-6">
-  
-        <h1 className="text-2xl font-semibold mb-10">
-          ⚡ Energy Journal
-        </h1>
-  
-        <div className="space-y-2">
-  
-          <button
-            onClick={() => setPage("dashboard")}
-            className={item}
-          >
-            Dashboard
-          </button>
-  
-          <button
-            onClick={() => setPage("calendar")}
-            className={item}
-          >
-            Calendar
-          </button>
-  
-          <button
-            onClick={() => setPage("insights")}
-            className={item}
-          >
-            Insights
-          </button>
-  
-          <button
-            onClick={() => setPage("premium")}
-            className={item}
-          >
-            Premium
-          </button>
-  
-        </div>
-  
-        <button
-          onClick={logout}
+  entries,
+}) {
+  const dailyMap = {}
+
+  entries.forEach((entry) => {
+    if (
+      !dailyMap[entry.date] ||
+      entry.energy > dailyMap[entry.date]
+    ) {
+      dailyMap[entry.date] = entry.energy
+    }
+  })
+
+  const days = Object.entries(dailyMap)
+
+  return (
+    <div
+      className="
+      w-80
+      border-l
+      bg-gray-50
+      p-4
+      overflow-y-auto
+      "
+    >
+      <h2 className="font-semibold mb-4">
+        History
+      </h2>
+
+      {days.map(([date, energy]) => (
+        <div
+          key={date}
           className="
-          mt-10
-          bg-orange-400
-          text-white
-          px-4
-          py-3
-          rounded-xl
-          w-full
+            p-3
+            rounded-xl
+            hover:bg-white
+            cursor-pointer
+            mb-2
           "
         >
-          Logout
-        </button>
-  
-      </div>
-    )
-  }
+          <div className="font-medium">
+            {date}
+          </div>
+
+          <div className="text-sm text-gray-500">
+            ⚡ {energy}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
