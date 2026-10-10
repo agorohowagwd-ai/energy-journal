@@ -10,7 +10,7 @@ async function sendMessage(chatId, text) {
   const response = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
   })
   if (!response.ok) throw new Error(`Telegram sendMessage failed: ${response.status}`)
 }
@@ -59,8 +59,8 @@ export default async function handler(req, res) {
       if (entriesError) throw entriesError
 
       const prompt = entries?.length
-        ? `Как прошёл твой день? 🌿\nСегодня ты добавил(а) ${entries.length} ${entries.length === 1 ? "запись" : "записей"} в дневник. Средняя энергия — ${(entries.reduce((sum, entry) => sum + Number(entry.energy || 0), 0) / entries.length).toFixed(1)}/10.\n\nЧто сегодня дало тебе силы, а что их забрало? Можешь ответить прямо здесь: «Прогулка — энергия 8».`
-        : "Небольшая пауза для себя 🌿\nКак ты сегодня себя чувствовал(а)? Запиши одно занятие и оцени энергию от 1 до 10. Например: «Прогулка — энергия 8»."
+        ? `<b>Как прошёл твой день?</b>\nСегодня ты добавил(а) ${entries.length} ${entries.length === 1 ? "запись" : "записей"} в дневник. Средняя энергия — <b>${(entries.reduce((sum, entry) => sum + Number(entry.energy || 0), 0) / entries.length).toFixed(1)}/10</b>.\n\nЧто сегодня дало тебе силы, а что их забрало? Можешь ответить прямо здесь:\n<code>Прогулка — энергия 8</code>`
+        : "<b>Небольшая пауза для себя</b>\nКак ты сегодня себя чувствовал(а)? Запиши одно занятие и оцени энергию от 1 до 10. Например:\n<code>Прогулка — энергия 8</code>"
       await sendMessage(user.chat_id, prompt)
       const { error: logError } = await supabase.from("telegram_reminder_log").insert({
         user_id: user.user_id, reminder_date: date,

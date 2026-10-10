@@ -302,6 +302,14 @@ export default function App() {
           </button>
           <p className="landing-footnote">Твои наблюдения. Твой темп. Без оценок и гонки за продуктивностью.</p>
         </section>
+        <svg className="spin-badge" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <path id="badge-circle" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
+          </defs>
+          <text fontSize="9" fill="currentColor" letterSpacing="2">
+            <textPath href="#badge-circle">ЗАМЕЧАЙ · ЗАПИСЫВАЙ · НАБЛЮДАЙ ·</textPath>
+          </text>
+        </svg>
       </main>
     )
   }
@@ -355,14 +363,16 @@ export default function App() {
         </div>
       </header>
 
-      <div className="dashboard" id="top">
-        <section className="main-column">
-          <div className="page-heading">
-            <p className="eyebrow">ТВОЁ ПРОСТРАНСТВО</p>
-            <h1>Как ты сегодня?</h1>
-            <p className="muted">Не нужно помнить всё — просто фиксируй то, что замечаешь.</p>
-          </div>
+      <section className="hero-band" id="top">
+        <div className="page-heading">
+          <p className="eyebrow">ТВОЁ ПРОСТРАНСТВО</p>
+          <h1>Как ты сегодня?</h1>
+          <p className="muted">Не нужно помнить всё — просто фиксируй то, что замечаешь.</p>
+        </div>
+      </section>
 
+      <div className="dashboard">
+        <section className="main-column">
           {errorMessage && <p className="message message-error">{errorMessage}</p>}
           {successMessage && <p className="message message-success">{successMessage}</p>}
 
@@ -439,11 +449,11 @@ export default function App() {
               <div className="chart-wrap">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={weeklyData} margin={{ top: 12, right: 12, bottom: 4, left: -16 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ecebe7" />
-                    <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fill: "#88877f", fontSize: 12 }} />
-                    <YAxis domain={[1, 10]} ticks={[1, 3, 5, 7, 10]} tickLine={false} axisLine={false} tick={{ fill: "#88877f", fontSize: 12 }} />
-                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e8e6e0", fontSize: 13 }} formatter={(value) => [`${value}/10`, "Энергия"]} />
-                    <Line type="monotone" dataKey="energy" stroke="#617b63" strokeWidth={3} dot={{ r: 4, fill: "#617b63", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
+                    <CartesianGrid vertical={false} stroke="#000" strokeOpacity={0.08} />
+                    <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: "#000" }} tick={{ fill: "#6d6d6d", fontSize: 11 }} />
+                    <YAxis domain={[1, 10]} ticks={[1, 3, 5, 7, 10]} tickLine={false} axisLine={false} tick={{ fill: "#6d6d6d", fontSize: 11 }} />
+                    <Tooltip cursor={{ stroke: "#000", strokeWidth: 1 }} contentStyle={{ borderRadius: 0, border: "1px solid #000", boxShadow: "none", fontSize: 13 }} formatter={(value) => [`${value}/10`, "Энергия"]} />
+                    <Line type="monotone" dataKey="energy" stroke="#000" strokeWidth={1.5} dot={{ r: 3.5, fill: "#fff", stroke: "#000", strokeWidth: 1 }} activeDot={{ r: 6, fill: "#000", stroke: "#000" }} connectNulls={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
