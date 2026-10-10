@@ -71,6 +71,8 @@ export default function App() {
   const [entryDate, setEntryDate] = useState(localDate())
   const [entries, setEntries] = useState([])
   const [saving, setSaving] = useState(false)
+  const [telegramCode, setTelegramCode] = useState("")
+  const [telegramLoading, setTelegramLoading] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -168,6 +170,30 @@ export default function App() {
       setEntries([])
       setView("landing")
     }
+  }
+
+  async function createTelegramCode() {
+    setTelegramLoading(true)
+    setErrorMessage("")
+    setSuccessMessage("")
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData?.user) {
+      setTelegramLoading(false)
+      setErrorMessage("Войди в аккаунт, чтобы подключить Telegram.")
+      return
+    }
+    const { error } = await supabase.from("telegram_link_codes").insert({
+      code,
+      user_id: userData.user.id,
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    })
+    setTelegramLoading(false)
+    if (error) {
+      setErrorMessage("Не удалось создать код. Проверь, что выполнил SQL-настройку Telegram в Supabase.")
+      return
+    }
+    setTelegramCode(code)
   }
 
   async function addEntry(event) {
@@ -456,6 +482,23 @@ export default function App() {
               </div>
             )}
             <p className="insight-disclaimer">Это подсказки по твоим оценкам, а не окончательные выводы. Смотри на повторяющиеся закономерности.</p>
+          </section>
+
+          <section className="panel telegram-panel">
+            <p className="eyebrow">БЫСТРЫЕ ЗАПИСИ</p>
+            <h2>Подключить Telegram</h2>
+            <p className="muted telegram-description">Записывай дела в чате, а они появятся в этом дневнике. Бот также напомнит вечером оценить свой день.</p>
+            <button className="button button-primary full-button" onClick={createTelegramCode} disabled={telegramLoading}>
+              {telegramLoading ? "Создаю код…" : "Создать код подключения"}
+            </button>
+            {telegramCode && <div className="telegram-code-box">
+              <span>Код действует 10 минут</span>
+              <strong>{telegramCode}</strong>
+              <p>Открой своего бота и отправь ему:</p>
+              <code>/link {telegramCode}</code>
+              <button className="text-button" onClick={() => { navigator.clipboard?.writeText("/link " + telegramCode); }}>Скопировать команду</button>
+              <p className="telegram-help">Имя бота появится после настройки Telegram webhook.</p>
+            </div>}
           </section>
 
           <section className="panel history-panel">
