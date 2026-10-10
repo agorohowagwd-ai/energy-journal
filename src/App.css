@@ -414,17 +414,6 @@ textarea { resize: vertical; line-height: 1.58; }
 .history-empty { padding-top: 20px; color: var(--felt); font-size: 16px; font-weight: 300; }
 .privacy-note { color: var(--felt); font-size: 11px; margin: 20px 0 0; text-transform: uppercase; letter-spacing: .04em; }
 
-/* Telegram band */
-.telegram-band { margin-top: 0; }
-.telegram-inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 48px; align-items: end; }
-.button-light { border-color: var(--paper); color: var(--paper); background: transparent; width: 100%; }
-.telegram-code-box { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--hair-dark); display: grid; gap: 10px; }
-.telegram-code-box > span, .telegram-code-box p { margin: 0; color: var(--ash); font-size: 12px; line-height: 1.58; }
-.telegram-code-box > strong { font-size: 54px; font-weight: 300; letter-spacing: .12em; color: var(--paper); line-height: 1; font-variant-numeric: tabular-nums; }
-.telegram-code-box code { color: var(--paper); font-size: 14px; overflow-wrap: anywhere; padding: 10px 0; border-bottom: 1px solid var(--hair-dark); }
-.telegram-code-box .text-button { justify-self: start; color: var(--paper); }
-.telegram-help { font-size: 11px !important; }
-
 /* Form internals */
 .entry-form { display: grid; gap: 28px; }
 .field-full { width: 100%; }
@@ -490,8 +479,7 @@ textarea { resize: vertical; line-height: 1.58; }
   .work-grid { grid-template-columns: minmax(0, 1fr); }
   .band-cells { grid-template-columns: minmax(0, 1fr); }
   .band-cells > div { padding: 22px 0; border-left: 0; border-bottom: 1px solid var(--hair-dark); }
-  .telegram-inner { grid-template-columns: minmax(0, 1fr); }
-  .spin-badge { width: 92px; height: 92px; }
+    .spin-badge { width: 92px; height: 92px; }
 }
 @media (max-width: 560px) {
   .brand > span:last-child { display: none; }

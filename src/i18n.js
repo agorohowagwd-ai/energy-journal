@@ -24,7 +24,7 @@ export function saveLang(lang) {
 }
 
 // Categories are stored in the database by their English key.
-// Older entries (and the Telegram bot) may contain Russian names, so both are mapped.
+// Older entries may contain Russian names, so both are mapped.
 const CATEGORY_LABELS = {
   Work: { en: "Work", ru: "Работа" },
   Health: { en: "Health", ru: "Здоровье" },
@@ -66,8 +66,6 @@ export const T = {
     energyLabels: ["Drains a lot of energy", "Mostly drains energy", "Neutral", "Mostly gives energy", "Energizing"],
 
     msgAccountCreated: "Account created. Confirm your email if asked, then sign in.",
-    msgSignInForTelegram: "Sign in to connect Telegram.",
-    msgCodeFailed: "Could not create a code. Check that the Telegram SQL setup has been run in Supabase.",
     msgNeedActivity: "Add an activity first.",
     msgSessionEnded: "Your session has ended. Please sign in again.",
     msgSaved: "Entry saved.",
@@ -153,15 +151,6 @@ export const T = {
     save: "Save Entry",
     historyEyebrow: "02 — History",
     timeline: "Timeline",
-
-    tgEyebrow: "Quick entries",
-    tgTitle: "Connect Telegram",
-    tgCopy: "Log activities in the chat and they appear in your journal. The bot also reminds you in the evening to rate your day.",
-    tgCreating: "Creating code…",
-    tgCreate: "Create connection code",
-    tgValid: "The code is valid for 10 minutes",
-    tgSend: "Open your bot and send:",
-    tgCopyCmd: "Copy command",
   },
 
   ru: {
@@ -173,8 +162,6 @@ export const T = {
     energyLabels: ["Сильно забирает силы", "Скорее забирает силы", "Нейтрально", "Скорее даёт силы", "Заряжает"],
 
     msgAccountCreated: "Аккаунт создан. Если потребуется, подтверди почту и войди.",
-    msgSignInForTelegram: "Войди в аккаунт, чтобы подключить Telegram.",
-    msgCodeFailed: "Не удалось создать код. Проверь, что выполнил SQL-настройку Telegram в Supabase.",
     msgNeedActivity: "Напиши, чем ты занимался(ась).",
     msgSessionEnded: "Сессия завершилась. Войди в аккаунт ещё раз.",
     msgSaved: "Запись сохранена.",
@@ -260,14 +247,5 @@ export const T = {
     save: "Сохранить запись",
     historyEyebrow: "02 — История",
     timeline: "Журнал",
-
-    tgEyebrow: "Быстрые записи",
-    tgTitle: "Подключить Telegram",
-    tgCopy: "Записывай дела в чате, а они появятся в этом дневнике. Бот также напомнит вечером оценить свой день.",
-    tgCreating: "Создаю код…",
-    tgCreate: "Создать код подключения",
-    tgValid: "Код действует 10 минут",
-    tgSend: "Открой своего бота и отправь ему:",
-    tgCopyCmd: "Скопировать команду",
   },
 }

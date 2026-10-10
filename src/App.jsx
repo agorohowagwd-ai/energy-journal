@@ -59,8 +59,6 @@ export default function App() {
   const [entryDate, setEntryDate] = useState(localDate())
   const [entries, setEntries] = useState([])
   const [saving, setSaving] = useState(false)
-  const [telegramCode, setTelegramCode] = useState("")
-  const [telegramLoading, setTelegramLoading] = useState(false)
   const [lang, setLang] = useState(initialLang)
   const t = T[lang]
 
@@ -176,30 +174,6 @@ export default function App() {
       setEntries([])
       setView("landing")
     }
-  }
-
-  async function createTelegramCode() {
-    setTelegramLoading(true)
-    setErrorMessage("")
-    setSuccessMessage("")
-    const code = String(Math.floor(100000 + Math.random() * 900000))
-    const { data: userData, error: userError } = await supabase.auth.getUser()
-    if (userError || !userData?.user) {
-      setTelegramLoading(false)
-      setErrorMessage(t.msgSignInForTelegram)
-      return
-    }
-    const { error } = await supabase.from("telegram_link_codes").insert({
-      code,
-      user_id: userData.user.id,
-      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-    })
-    setTelegramLoading(false)
-    if (error) {
-      setErrorMessage(t.msgCodeFailed)
-      return
-    }
-    setTelegramCode(code)
   }
 
   async function addEntry(event) {
@@ -699,28 +673,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* TELEGRAM — black band */}
-        <section className="band-dark telegram-band" id="telegram">
-          <div className="page telegram-inner">
-            <div>
-              <p className="eyebrow">{t.tgEyebrow}</p>
-              <h2>{t.tgTitle}</h2>
-              <p className="band-lead small">{t.tgCopy}</p>
-            </div>
-            <div className="telegram-action">
-              <button className="button button-light" onClick={createTelegramCode} disabled={telegramLoading}>
-                {telegramLoading ? t.tgCreating : t.tgCreate}
-              </button>
-              {telegramCode && <div className="telegram-code-box">
-                <span>{t.tgValid}</span>
-                <strong>{telegramCode}</strong>
-                <p>{t.tgSend}</p>
-                <code>/link {telegramCode}</code>
-                <button className="text-button" onClick={() => { navigator.clipboard?.writeText("/link " + telegramCode)?.catch?.(() => {}) }}>{t.tgCopyCmd}</button>
-              </div>}
-            </div>
-          </div>
-        </section>
       </div>
     </main>
   )
