@@ -258,7 +258,7 @@ export default function App() {
     })
   }, [entries])
 
-  if (view === "landing" || !session) {
+  if (view === "landing") {
     return (
       <main className="landing">
         <div className="landing-glow landing-glow-one" />
