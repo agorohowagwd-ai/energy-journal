@@ -187,6 +187,7 @@ export const T = {
 
     logEyebrow: "01 — Log",
     logTitle: "Log Energy",
+    last14: "Last 14 days",
     activity: "Activity",
     notes: "Notes",
     energy: "Energy",
@@ -314,6 +315,7 @@ export const T = {
 
     logEyebrow: "01 — Запись",
     logTitle: "Записать энергию",
+    last14: "Последние 14 дней",
     activity: "Дело или занятие",
     notes: "Заметки",
     energy: "Энергия",

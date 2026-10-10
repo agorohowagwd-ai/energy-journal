@@ -40,6 +40,33 @@ function energyTone(value) {
   return "high"
 }
 
+// Small white line of daily average energy for the dashboard header.
+function Sparkline({ values }) {
+  const W = 320, H = 96, P = 8
+  const points = values
+    .map((value, index) => (value === null ? null : {
+      x: P + (index * (W - 2 * P)) / (values.length - 1),
+      y: H - P - ((value - 1) / 9) * (H - 2 * P),
+    }))
+    .filter(Boolean)
+  if (points.length < 2) {
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="spark" aria-hidden="true">
+        <line x1={P} y1={H / 2} x2={W - P} y2={H / 2} stroke="currentColor" strokeOpacity="0.35" strokeDasharray="2 6" />
+      </svg>
+    )
+  }
+  const d = points.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ")
+  const last = points[points.length - 1]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="spark" aria-hidden="true">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      {points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="currentColor" />)}
+      <circle cx={last.x} cy={last.y} r="5" fill="none" stroke="currentColor" />
+    </svg>
+  )
+}
+
 export default function App() {
   const [session, setSession] = useState(null)
   const [view, setView] = useState("landing")
@@ -145,7 +172,7 @@ export default function App() {
     setErrorMessage("")
     setSuccessMessage("")
 
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: { data: { name: name.trim() } },
@@ -158,7 +185,8 @@ export default function App() {
     }
 
     setMode("login")
-    setSuccessMessage(t.msgAccountCreated)
+    // With email confirmation off the user is signed in at once; only explain when a confirmation is pending.
+    if (!signUpData?.session) setSuccessMessage(t.msgAccountCreated)
   }
 
   async function signIn(event) {
@@ -368,6 +396,23 @@ export default function App() {
     })
   }, [entries, range, t.locale])
 
+  // Last 14 days for the small chart in the dashboard header.
+  const sparkData = useMemo(() => {
+    return Array.from({ length: 14 }, (_, index) => {
+      const date = new Date()
+      date.setDate(date.getDate() - (13 - index))
+      const iso = localDate(date)
+      const list = entries.filter((entry) => entry.date === iso)
+      return list.length ? list.reduce((sum, entry) => sum + Number(entry.energy || 0), 0) / list.length : null
+    })
+  }, [entries])
+
+  const activityRef = useRef(null)
+  function focusNewEntry() {
+    document.getElementById("log")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    setTimeout(() => activityRef.current?.focus({ preventScroll: true }), 350)
+  }
+
   const chartPeaks = useMemo(() => {
     const values = chartData.map((point) => point.energy).filter((value) => value !== null)
     if (!values.length) return []
@@ -551,9 +596,18 @@ export default function App() {
             <span>Thrive</span>
             <span>{new Date().toLocaleDateString(t.locale, { weekday: "long", month: "long", day: "numeric" })}</span>
           </div>
-          <div className="page-heading">
-            <h1>{t.dashboard}</h1>
-            <p className="muted">{t.dashboardCopy}</p>
+          <div className="hero-row">
+            <div className="page-heading">
+              <h1>{t.dashboard}</h1>
+              <p className="muted">{t.dashboardCopy}</p>
+            </div>
+            <div className="hero-spark">
+              <button type="button" className="hero-add" onClick={focusNewEntry} aria-label={t.logTitle} title={t.logTitle}>+</button>
+              <div className="hero-spark-chart">
+                <Sparkline values={sparkData} />
+                <span className="hero-spark-label">{t.last14}</span>
+              </div>
+            </div>
           </div>
           <svg className="spin-badge" viewBox="0 0 100 100" aria-hidden="true">
             <defs>
@@ -565,106 +619,128 @@ export default function App() {
           </svg>
         </section>
 
-        <div className="page">
-          {errorMessage && <p className="message message-error">{errorMessage}</p>}
-          {successMessage && <p className="message message-success">{successMessage}</p>}
+        <div className="dash-body">
+          <div className="dash-main">
+            {errorMessage && <p className="message message-error dash-msg">{errorMessage}</p>}
+            {successMessage && <p className="message message-success dash-msg">{successMessage}</p>}
 
-          {/* KPI */}
-          <section className="kpi-grid" aria-label={t.dashboard}>
-            {[averageEnergy ?? "0", energyStats?.highest ?? "0", energyStats?.lowest ?? "0", streak].map((value, index) => ({
-              label: t.kpi[index][0], value, note: t.kpi[index][1],
-            })).map((card) => (
-              <article key={card.label} className="kpi">
-                <p className="eyebrow">{card.label}</p>
-                <strong>{card.value}</strong>
-                <span>{card.note}</span>
-              </article>
-            ))}
-          </section>
-        </div>
-
-        {/* AI COACH — black band */}
-        <section className="band-dark" id="insights">
-          <div className="page">
-            <div className="band-head">
-              <div>
-                <p className="eyebrow">{t.aiCoach}</p>
-                <h2>{t.aiTitle}</h2>
-              </div>
-              <span className="live-pill"><span />{t.live}</span>
-            </div>
-            <p className="band-lead">
-              {observation ? observation.text : t.aiEmpty}
-            </p>
-            <div className="band-cells">
-              <div><p className="eyebrow">{t.pattern}</p><strong>{observation?.pattern ?? "—"}</strong></div>
-              <div><p className="eyebrow">{t.peakEnergy}</p><strong>{energyStats?.highest ?? 0}/10</strong></div>
-              <div><p className="eyebrow">{t.recovery}</p><strong>{observation?.recovery ?? "—"}</strong></div>
-            </div>
-            {bestEntry && (
-              <p className="band-note">
-                {t.mostEnergy}: {bestEntry.activity} ({bestEntry.energy}/10)
-                {hardestEntry && hardestEntry !== bestEntry ? ` · ${t.leastEnergy}: ${hardestEntry.activity} (${hardestEntry.energy}/10)` : ""}
-              </p>
-            )}
-          </div>
-        </section>
-
-        <div className="page">
-          {/* CHART */}
-          <section className="chart-section" id="analytics">
-            <div className="range-switch" role="group" aria-label={t.energyTimeline}>
-              {["week", "month", "year"].map((key) => (
-                <button key={key} type="button" className={`pill-sm ${range === key ? "active" : ""}`} onClick={() => setRange(key)} aria-pressed={range === key}>
-                  {t.ranges[key].toUpperCase()}
-                </button>
+            <section className="kpi-grid" aria-label={t.dashboard}>
+              {[averageEnergy ?? "0", energyStats?.highest ?? "0", energyStats?.lowest ?? "0", streak].map((value, index) => ({
+                label: t.kpi[index][0], value, note: t.kpi[index][1],
+              })).map((card) => (
+                <article key={card.label} className="kpi">
+                  <p className="eyebrow">{card.label}</p>
+                  <strong>{card.value}</strong>
+                  <span>{card.note}</span>
+                </article>
               ))}
-            </div>
-            <div className="section-head">
-              <div>
-                <p className="eyebrow">{t.energyTimeline}</p>
-                <h2>{t.ranges[range]} {t.view}</h2>
-              </div>
-              <span className="section-meta">{chartData.filter((point) => point.energy !== null).length} {t.points}</span>
-            </div>
-            {chartData.filter((point) => point.energy !== null).length < 2 ? (
-              <div className="chart-empty">
-                <p>{t.needTwo}</p>
-              </div>
-            ) : (
-              <div className="chart-wrap">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 16, right: 12, bottom: 4, left: -16 }}>
-                    <CartesianGrid vertical={false} stroke="#000" strokeOpacity={0.08} />
-                    <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: "#000" }} tick={{ fill: "#6d6d6d", fontSize: 11 }} interval="preserveStartEnd" minTickGap={16} />
-                    <YAxis domain={[0, 10]} tickLine={false} axisLine={false} tick={{ fill: "#6d6d6d", fontSize: 11 }} width={40} />
-                    <Tooltip cursor={{ stroke: "#000", strokeWidth: 1 }} contentStyle={{ borderRadius: 0, border: "1px solid #000", boxShadow: "none", fontSize: 13 }} formatter={(value) => [`${value}/10`, t.energyWord]} />
-                    <Line
-                      type="monotone"
-                      dataKey="energy"
-                      stroke="#000"
-                      strokeWidth={1.5}
-                      connectNulls
-                      dot={{ r: 3.5, fill: "#fff", stroke: "#000", strokeWidth: 1, cursor: "pointer" }}
-                      activeDot={{ r: 6, fill: "#000", stroke: "#000", cursor: "pointer", onClick: (_, payload) => handlePointClick(payload?.payload) }}
-                    />
-                    {chartPeaks.map((peak) => (
-                      <ReferenceDot key={`${peak.day}-${peak.energy}`} x={peak.day} y={peak.energy} r={7} fill="#ffac2e" stroke="#000" strokeWidth={1} />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </section>
+            </section>
 
-          {/* FORM + TIMELINE */}
-          <div className="work-grid" id="journal">
-            <section className="entry-panel">
+            <section className="band-dark dash-ai" id="insights">
+                <p className="eyebrow">{t.aiCoach}</p>
+                <div className="band-head">
+                  <h2>{t.aiTitle}</h2>
+                  <span className="live-pill"><span />{t.live}</span>
+                </div>
+                <p className="band-lead">
+                  {observation ? observation.text : t.aiEmpty}
+                </p>
+                <div className="band-cells">
+                  <div><p className="eyebrow">{t.pattern}</p><strong>{observation?.pattern ?? "—"}</strong></div>
+                  <div><p className="eyebrow">{t.peakEnergy}</p><strong>{energyStats?.highest ?? 0}/10</strong></div>
+                  <div><p className="eyebrow">{t.recovery}</p><strong>{observation?.recovery ?? "—"}</strong></div>
+                </div>
+                {bestEntry && (
+                  <p className="band-note">
+                    {t.mostEnergy}: {bestEntry.activity} ({bestEntry.energy}/10)
+                    {hardestEntry && hardestEntry !== bestEntry ? ` · ${t.leastEnergy}: ${hardestEntry.activity} (${hardestEntry.energy}/10)` : ""}
+                  </p>
+                )}
+            </section>
+
+            <section className="chart-section" id="analytics">
+              <div className="range-switch" role="group" aria-label={t.energyTimeline}>
+                {["week", "month", "year"].map((key) => (
+                  <button key={key} type="button" className={`pill-sm ${range === key ? "active" : ""}`} onClick={() => setRange(key)} aria-pressed={range === key}>
+                    {t.ranges[key].toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <div className="section-head">
+                <div>
+                  <p className="eyebrow">{t.energyTimeline}</p>
+                  <h2>{t.ranges[range]} {t.view}</h2>
+                </div>
+                <span className="section-meta">{chartData.filter((point) => point.energy !== null).length} {t.points}</span>
+              </div>
+              {chartData.filter((point) => point.energy !== null).length < 2 ? (
+                <div className="chart-empty">
+                  <p>{t.needTwo}</p>
+                </div>
+              ) : (
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ top: 16, right: 12, bottom: 4, left: -16 }}>
+                      <CartesianGrid vertical={false} stroke="#000" strokeOpacity={0.08} />
+                      <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: "#000" }} tick={{ fill: "#6d6d6d", fontSize: 11 }} interval="preserveStartEnd" minTickGap={16} />
+                      <YAxis domain={[0, 10]} tickLine={false} axisLine={false} tick={{ fill: "#6d6d6d", fontSize: 11 }} width={40} />
+                      <Tooltip cursor={{ stroke: "#000", strokeWidth: 1 }} contentStyle={{ borderRadius: 0, border: "1px solid #000", boxShadow: "none", fontSize: 13 }} formatter={(value) => [`${value}/10`, t.energyWord]} />
+                      <Line
+                        type="monotone"
+                        dataKey="energy"
+                        stroke="#000"
+                        strokeWidth={1.5}
+                        connectNulls
+                        dot={{ r: 3.5, fill: "#fff", stroke: "#000", strokeWidth: 1, cursor: "pointer" }}
+                        activeDot={{ r: 6, fill: "#000", stroke: "#000", cursor: "pointer", onClick: (_, payload) => handlePointClick(payload?.payload) }}
+                      />
+                      {chartPeaks.map((peak) => (
+                        <ReferenceDot key={`${peak.day}-${peak.energy}`} x={peak.day} y={peak.energy} r={7} fill="#ffac2e" stroke="#000" strokeWidth={1} />
+                      ))}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </section>
+
+            <section className="journal-panel" id="journal">
+              <p className="eyebrow">{t.historyEyebrow}</p>
+              <h2 className="journal-title">{t.timeline}</h2>
+              {entries.length === 0 ? (
+                <p className="history-empty">{t.noEntries}</p>
+              ) : (
+                <div className="journal-list">
+                  {entries.map((entry) => (
+                    <article
+                      className={`journal-entry ${selectedId === entry.id ? "selected" : ""}`}
+                      key={entry.id ?? `${entry.date}-${entry.activity}-${entry.created_at}`}
+                      id={`entry-${entry.id}`}
+                      onClick={() => setSelectedId(entry.id)}
+                    >
+                      <div className="journal-main">
+                        <h3>{entry.activity}</h3>
+                        <div className="journal-top">
+                          <span>{categoryLabel(entry.category, lang)}</span>
+                          <time>{entry.date}</time>
+                          <span>{moodLabel(entry.mood, lang)}</span>
+                        </div>
+                        {entry.notes && <p className="journal-meta">{entry.notes}</p>}
+                      </div>
+                      <strong className="journal-energy">{entry.energy}</strong>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <aside className="dash-aside">
+            <section className="entry-panel" id="log">
               <p className="eyebrow">{t.logEyebrow}</p>
               <h2>{t.logTitle}</h2>
 
               <form onSubmit={addEntry} className="entry-form">
-                <input aria-label={t.activity} value={activity} onChange={(event) => setActivity(event.target.value)} placeholder={t.activity} maxLength={120} required />
+                <input ref={activityRef} aria-label={t.activity} value={activity} onChange={(event) => setActivity(event.target.value)} placeholder={t.activity} maxLength={120} required />
                 <textarea aria-label={t.notes} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={t.notes} rows={3} maxLength={1000} />
 
                 <fieldset className="rating-field">
@@ -701,37 +777,7 @@ export default function App() {
                 </button>
               </form>
             </section>
-
-            <section className="journal-panel">
-              <p className="eyebrow">{t.historyEyebrow}</p>
-              <h2 className="journal-title">{t.timeline}</h2>
-              {entries.length === 0 ? (
-                <p className="history-empty">{t.noEntries}</p>
-              ) : (
-                <div className="journal-list">
-                  {entries.map((entry) => (
-                    <article
-                      className={`journal-entry ${selectedId === entry.id ? "selected" : ""}`}
-                      key={entry.id ?? `${entry.date}-${entry.activity}-${entry.created_at}`}
-                      id={`entry-${entry.id}`}
-                      onClick={() => setSelectedId(entry.id)}
-                    >
-                      <div className="journal-main">
-                        <h3>{entry.activity}</h3>
-                        <div className="journal-top">
-                          <span>{categoryLabel(entry.category, lang)}</span>
-                          <time>{entry.date}</time>
-                          <span>{moodLabel(entry.mood, lang)}</span>
-                        </div>
-                        {entry.notes && <p className="journal-meta">{entry.notes}</p>}
-                      </div>
-                      <strong className="journal-energy">{entry.energy}</strong>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
+          </aside>
         </div>
 
       </div>
