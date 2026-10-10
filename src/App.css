@@ -662,3 +662,28 @@ textarea { resize: vertical; line-height: 1.58; }
   .dash-main .kpi:nth-child(n+3) { border-top: 1px solid var(--hair); }
   .dash-main .kpi { padding-bottom: 24px; }
 }
+
+/* ───────── Energy chart: summary, zones, tooltip ───────── */
+
+.chart-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 24px; border-bottom: 1px solid var(--hair); }
+.chart-summary > div { padding: 0 16px 20px; display: grid; gap: 8px; min-width: 0; border-left: 1px solid var(--hair); }
+.chart-summary > div:first-child { padding-left: 0; border-left: 0; }
+.chart-summary span { color: var(--felt); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.chart-summary strong { font-size: clamp(20px, 2vw, 29px); font-weight: 300; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.chart-tip { background: var(--paper); border: 1px solid var(--obsidian); padding: 14px 16px; min-width: 200px; max-width: 280px; }
+.chart-tip p { margin: 0; }
+.chart-tip-date { color: var(--felt); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.chart-tip-value { margin-top: 6px !important; font-size: 13px; color: var(--felt); }
+.chart-tip-value strong { color: var(--obsidian); font-size: 29px; font-weight: 300; }
+.chart-tip ul { list-style: none; margin: 10px 0 0; padding: 8px 0 0; border-top: 1px solid var(--hair); display: grid; gap: 6px; }
+.chart-tip li { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; }
+.chart-tip li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-tip li b { font-weight: 400; font-variant-numeric: tabular-nums; }
+.chart-tip-more { color: var(--felt); }
+
+@media (max-width: 700px) {
+  .chart-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-summary > div:nth-child(3) { padding-left: 0; border-left: 0; }
+  .chart-summary > div:nth-child(n+3) { padding-top: 16px; border-top: 1px solid var(--hair); }
+}
