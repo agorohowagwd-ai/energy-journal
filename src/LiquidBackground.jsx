@@ -76,21 +76,25 @@ void main() {
                 fbm(p + 1.4 * q + vec2(8.3, 2.8) - t * 0.4));
   float f = fbm(p + 1.5 * r);
 
+  // Reference gradient, left to right: sage -> molten amber -> oxblood.
+  // The position is bent by the liquid so the bands flow instead of sitting flat.
+  vec3 sage    = vec3(0.627, 0.878, 0.671);
+  vec3 amber   = vec3(1.0, 0.675, 0.180);
   vec3 oxblood = vec3(0.647, 0.176, 0.145);
-  // muted amber: the reference #ffac2e pulled toward bronze so it glows rather than shouts
-  vec3 amber   = vec3(0.72, 0.47, 0.20);
-  vec3 mint    = vec3(0.627, 0.878, 0.671);
+  float x = clamp(uv.x + 0.32 * r.x + 0.18 * f, 0.0, 1.0);
+  vec3 hue = x < 0.5
+    ? mix(sage, amber, smoothstep(0.0, 0.5, x))
+    : mix(amber, oxblood, smoothstep(0.5, 1.0, x));
 
-  // restrained palette: oxblood -> amber across the folds
-  vec3 hue = mix(oxblood * 0.85, amber, smoothstep(0.05, 0.65, f + 0.3 * r.x));
+  // Light lives on the raised folds; the rest of the frame is black.
+  float light = smoothstep(0.0, 0.6, f + 0.25 * q.y);
+  // Darken by deepening toward oxblood first, so dim areas never turn mustard or brown.
+  vec3 deep = mix(oxblood * 0.55, hue, smoothstep(0.15, 0.85, light));
+  vec3 col = deep * light * 0.88;
 
-  // most of the frame stays black; light lives on the raised folds
-  float light = smoothstep(-0.05, 0.55, f + 0.25 * q.y);
-  vec3 col = hue * light * 0.72;
-
-  // thin glossy highlight that catches a little mint
-  float crest = pow(0.5 + 0.5 * sin((f * 2.0 + r.y) * 3.0 + t * 1.5), 7.0) * light;
-  col += mix(vec3(1.0), mint, 0.6) * crest * 0.12;
+  // glossy crest, white-ish, very thin
+  float crest = pow(0.5 + 0.5 * sin((f * 2.0 + r.y) * 3.0 + t * 1.5), 9.0) * light;
+  col += vec3(1.0) * crest * 0.12;
 
   // vignette and a calmer lower-left where the text sits
   float vig = 1.0 - smoothstep(0.35, 1.3, length((uv - vec2(0.55, 0.6)) * vec2(1.0, 1.2)));
