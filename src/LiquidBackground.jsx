@@ -77,19 +77,20 @@ void main() {
   float f = fbm(p + 1.5 * r);
 
   vec3 oxblood = vec3(0.647, 0.176, 0.145);
-  vec3 amber   = vec3(1.0, 0.675, 0.180);
+  // muted amber: the reference #ffac2e pulled toward bronze so it glows rather than shouts
+  vec3 amber   = vec3(0.72, 0.47, 0.20);
   vec3 mint    = vec3(0.627, 0.878, 0.671);
 
   // restrained palette: oxblood -> amber across the folds
-  vec3 hue = mix(oxblood, amber, smoothstep(-0.1, 0.5, f + 0.3 * r.x));
+  vec3 hue = mix(oxblood * 0.85, amber, smoothstep(0.05, 0.65, f + 0.3 * r.x));
 
   // most of the frame stays black; light lives on the raised folds
   float light = smoothstep(-0.05, 0.55, f + 0.25 * q.y);
-  vec3 col = hue * light * 0.9;
+  vec3 col = hue * light * 0.72;
 
   // thin glossy highlight that catches a little mint
   float crest = pow(0.5 + 0.5 * sin((f * 2.0 + r.y) * 3.0 + t * 1.5), 7.0) * light;
-  col += mix(vec3(1.0), mint, 0.6) * crest * 0.22;
+  col += mix(vec3(1.0), mint, 0.6) * crest * 0.12;
 
   // vignette and a calmer lower-left where the text sits
   float vig = 1.0 - smoothstep(0.35, 1.3, length((uv - vec2(0.55, 0.6)) * vec2(1.0, 1.2)));
