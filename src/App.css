@@ -183,3 +183,12 @@ textarea { resize: vertical; line-height: 1.6; }
   .landing-footnote { margin-top: 38px; }
   .auth-card { padding: 23px 19px; }
 }
+
+.telegram-panel h2 { font-size: 21px; margin: 0 0 10px; }
+.telegram-description { font-size: 13px; margin-bottom: 16px; }
+.telegram-code-box { margin-top: 16px; padding: 15px; border: 1px dashed #b7c6b2; background: #f5f8f2; border-radius: 12px; display: grid; gap: 8px; }
+.telegram-code-box > span, .telegram-code-box p { margin: 0; color: #777b72; font-size: 12px; line-height: 1.6; }
+.telegram-code-box > strong { font-family: 'Manrope', sans-serif; font-size: 32px; letter-spacing: .18em; color: #426747; }
+.telegram-code-box code { color: #426747; font-size: 13px; overflow-wrap: anywhere; }
+.telegram-code-box .text-button { justify-self: start; }
+.telegram-help { font-size: 10px !important; }
