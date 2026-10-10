@@ -78,6 +78,16 @@ export const T = {
     landingButton: "Start Thrive",
     landingFootnote: "Track energy · Detect patterns · Build consistency",
     badge: "TRACK · DETECT · UNLOCK · THRIVE ·",
+    anchors: [
+      { text: "Walk outside", score: 9 },
+      { text: "Late meeting", score: 3 },
+      { text: "Call with mom", score: 8 },
+      { text: "Morning yoga", score: 8 },
+      { text: "Doomscrolling", score: 2 },
+      { text: "Coffee with a friend", score: 9 },
+      { text: "Deadline rush", score: 4 },
+      { text: "Reading before bed", score: 7 },
+    ],
 
     back: "← Back",
     welcomeBack: "Welcome back",
@@ -174,6 +184,16 @@ export const T = {
     landingButton: "Начать",
     landingFootnote: "Отслеживай энергию · Замечай закономерности · Будь последовательным",
     badge: "ЗАМЕЧАЙ · ЗАПИСЫВАЙ · НАБЛЮДАЙ ·",
+    anchors: [
+      { text: "Прогулка на улице", score: 9 },
+      { text: "Поздняя встреча", score: 3 },
+      { text: "Звонок маме", score: 8 },
+      { text: "Утренняя йога", score: 8 },
+      { text: "Лента соцсетей", score: 2 },
+      { text: "Кофе с подругой", score: 9 },
+      { text: "Аврал перед дедлайном", score: 4 },
+      { text: "Чтение перед сном", score: 7 },
+    ],
 
     back: "← Назад",
     welcomeBack: "С возвращением",

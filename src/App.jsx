@@ -11,7 +11,7 @@ import {
 } from "recharts"
 import { supabase } from "./supabase"
 import { T, initialLang, saveLang, categoryLabel, moodLabel } from "./i18n"
-import LiquidBackground from "./LiquidBackground"
+import AnchorsBackground from "./AnchorsBackground"
 import "./App.css"
 
 const CATEGORIES = ["Work", "Health", "Study", "Social", "Rest", "Other"]
@@ -341,7 +341,7 @@ export default function App() {
   if (view === "landing") {
     return (
       <main className="landing">
-        <LiquidBackground />
+        <AnchorsBackground labels={t.anchors} />
         <div className="landing-bar">
           <span className="landing-logo">Thrive</span>
           <span className="landing-tag">{t.landingTag}</span>
@@ -356,14 +356,6 @@ export default function App() {
           </button>
           <p className="landing-footnote">{t.landingFootnote}</p>
         </section>
-        <svg className="spin-badge" viewBox="0 0 100 100" aria-hidden="true">
-          <defs>
-            <path id="badge-circle" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
-          </defs>
-          <text fontSize="9.5" fill="currentColor" letterSpacing="2">
-            <textPath href="#badge-circle">{t.badge}</textPath>
-          </text>
-        </svg>
       </main>
     )
   }
