@@ -1,18 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  Area,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ReferenceArea,
-  ReferenceLine,
-} from "recharts"
 import { supabase } from "./supabase"
 import { T, initialLang, saveLang, categoryLabel, moodLabel, friendlyError } from "./i18n"
 import AnchorsBackground from "./AnchorsBackground"
+import EnergyEQ from "./EnergyEQ"
 import "./App.css"
 
 const CATEGORIES = ["Work", "Health", "Study", "Social", "Rest", "Other"]
@@ -39,33 +29,6 @@ function energyTone(value) {
   if (value <= 6) return "neutral"
   if (value <= 8) return "medium-high"
   return "high"
-}
-
-// Chart point coloured by how the day felt: amber gives energy, oxblood drains it.
-function EnergyDot({ cx, cy, payload }) {
-  if (payload?.energy === null || payload?.energy === undefined || cx == null || cy == null) return null
-  const value = payload.energy
-  const fill = value >= 7 ? "#ffac2e" : value <= 4 ? "#a52d25" : "#fff"
-  return <circle cx={cx} cy={cy} r={value >= 7 || value <= 4 ? 5 : 4} fill={fill} stroke="#000" strokeWidth={1} />
-}
-
-// Tooltip that says what happened that day, not just the number.
-function ChartTooltip({ active, payload, t }) {
-  const point = active && payload?.[0]?.payload
-  if (!point || point.energy === null) return null
-  const items = [...(point.items || [])].sort((a, b) => Number(b.energy) - Number(a.energy))
-  return (
-    <div className="chart-tip">
-      <p className="chart-tip-date">{point.full}</p>
-      <p className="chart-tip-value"><strong>{point.energy}</strong>/10 · {t.energyWord.toLowerCase()}</p>
-      <ul>
-        {items.slice(0, 5).map((item, index) => (
-          <li key={index}><span>{item.activity}</span><b className={Number(item.energy) >= 7 ? "tone-high" : Number(item.energy) <= 4 ? "tone-low" : ""}>{item.energy}</b></li>
-        ))}
-        {items.length > 5 && <li className="chart-tip-more">+{items.length - 5}</li>}
-      </ul>
-    </div>
-  )
 }
 
 // Small white line of daily average energy for the dashboard header.
@@ -718,47 +681,17 @@ export default function App() {
                 <div><span>{t.entriesLabel}</span><strong>{periodSummary.count}</strong></div>
               </div>
             )}
-            {chartData.filter((point) => point.energy !== null).length < 2 ? (
+            {chartData.every((point) => point.energy === null) ? (
               <div className="chart-empty">
                 <p>{t.needTwo}</p>
               </div>
             ) : (
-              <div className="chart-wrap">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 12, right: 8, bottom: 4, left: 0 }}>
-                    <defs>
-                      <linearGradient id="energyFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ffac2e" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#ffac2e" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    {/* zones: what drains, what is neutral, what gives energy */}
-                    <ReferenceArea y1={0} y2={4.5} fill="#a52d25" fillOpacity={0.06} stroke="none"
-                      label={{ value: t.zoneLow, position: "insideBottomRight", fill: "#a52d25", fontSize: 11 }} />
-                    <ReferenceArea y1={4.5} y2={6.5} fill="#000" fillOpacity={0.025} stroke="none"
-                      label={{ value: t.zoneMid, position: "insideRight", fill: "#6d6d6d", fontSize: 11 }} />
-                    <ReferenceArea y1={6.5} y2={10} fill="#ffac2e" fillOpacity={0.08} stroke="none"
-                      label={{ value: t.zoneHigh, position: "insideTopRight", fill: "#a8650a", fontSize: 11 }} />
-                    {averageEnergy !== null && (
-                      <ReferenceLine y={Number(averageEnergy)} stroke="#000" strokeDasharray="4 6" strokeOpacity={0.6}
-                        label={{ value: `${t.yourAvg} ${averageEnergy}`, position: "insideTopLeft", fill: "#000", fontSize: 11 }} />
-                    )}
-                    <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: "#000" }} tick={{ fill: "#6d6d6d", fontSize: 11 }} interval="preserveStartEnd" minTickGap={16} />
-                    <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tickLine={false} axisLine={false} tick={{ fill: "#6d6d6d", fontSize: 11 }} width={28} />
-                    <Tooltip content={<ChartTooltip t={t} />} cursor={{ stroke: "#000", strokeWidth: 1, strokeOpacity: 0.3 }} />
-                    <Area type="monotone" dataKey="energy" stroke="none" fill="url(#energyFill)" connectNulls isAnimationActive={false} />
-                    <Line
-                      type="monotone"
-                      dataKey="energy"
-                      stroke="#000"
-                      strokeWidth={1.5}
-                      connectNulls
-                      dot={<EnergyDot />}
-                      activeDot={{ r: 7, fill: "#000", stroke: "#fff", strokeWidth: 2, cursor: "pointer", onClick: (_, payload) => handlePointClick(payload?.payload) }}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
+              <EnergyEQ
+                data={chartData}
+                baseline={averageEnergy !== null ? Number(averageEnergy) : null}
+                labels={{ avg: t.yourAvg, avgShort: t.avgShort }}
+                onPick={handlePointClick}
+              />
             )}
             <p className="chart-note">{t.chartHint}</p>
             </section>
