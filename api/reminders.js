@@ -43,7 +43,10 @@ export default async function handler(req, res) {
     let sent = 0
     for (const user of users || []) {
       const timezone = user.timezone || "Europe/Moscow"
-      if (timeInZone(now, timezone) !== user.reminder_time) continue
+      // Vercel Hobby runs this cron once a day (17:00 UTC = 20:00 MSK, ±59 min),
+      // so send to everyone whose reminder time has already passed today.
+      // telegram_reminder_log below keeps it to one reminder per day.
+      if (timeInZone(now, timezone) < (user.reminder_time || "20:00")) continue
 
       const date = new Intl.DateTimeFormat("en-CA", {
         timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit",
