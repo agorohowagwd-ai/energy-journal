@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   ResponsiveContainer,
   LineChart,
@@ -78,22 +78,39 @@ export default function App() {
     </button>
   )
 
+  // Opened from a password-reset email: show the "new password" form instead of the dashboard.
+  const recoveringRef = useRef(
+    typeof window !== "undefined" && window.location.hash.includes("type=recovery"),
+  )
+
+  function openRecovery() {
+    recoveringRef.current = true
+    setMode("recover")
+    setView("auth")
+  }
+
   useEffect(() => {
     let mounted = true
+    if (recoveringRef.current) openRecovery()
 
     supabase.auth.getSession().then(({ data, error }) => {
       if (!mounted) return
       if (error) setErrorMessage(friendlyError(error, t))
       setSession(data?.session ?? null)
-      if (data?.session) {
+      if (data?.session && !recoveringRef.current) {
         setView("app")
         loadEntries()
       }
     })
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return
       setSession(nextSession)
+      if (event === "PASSWORD_RECOVERY") {
+        openRecovery()
+        return
+      }
+      if (recoveringRef.current && nextSession) return
       setView(nextSession ? "app" : "landing")
       if (nextSession) loadEntries()
       else setEntries([])
@@ -161,6 +178,42 @@ export default function App() {
       return
     }
 
+    setView("app")
+    await loadEntries()
+  }
+
+  async function sendReset(event) {
+    event?.preventDefault()
+    setLoading(true)
+    setErrorMessage("")
+    setSuccessMessage("")
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin,
+    })
+    setLoading(false)
+    if (error) {
+      setErrorMessage(friendlyError(error, t))
+      return
+    }
+    setSuccessMessage(t.resetSent)
+  }
+
+  async function saveNewPassword(event) {
+    event?.preventDefault()
+    setLoading(true)
+    setErrorMessage("")
+    setSuccessMessage("")
+    const { error } = await supabase.auth.updateUser({ password })
+    setLoading(false)
+    if (error) {
+      setErrorMessage(friendlyError(error, t))
+      return
+    }
+    recoveringRef.current = false
+    window.history.replaceState(null, "", window.location.pathname)
+    setPassword("")
+    setMode("login")
+    setSuccessMessage(t.passwordUpdated)
     setView("app")
     await loadEntries()
   }
@@ -368,29 +421,45 @@ export default function App() {
             {t.back}
           </button>
           <div className="auth-top"><span className="auth-logo">Thrive</span>{langSwitch()}</div>
-          <h1>{mode === "login" ? t.welcomeBack : t.createAccount}</h1>
-          <p className="muted">{mode === "login" ? t.authLoginCopy : t.authSignupCopy}</p>
-          <form onSubmit={mode === "login" ? signIn : signUp} className="auth-form">
+          <h1>{{ login: t.welcomeBack, signup: t.createAccount, forgot: t.forgotTitle, recover: t.recoverTitle }[mode]}</h1>
+          <p className="muted">{{ login: t.authLoginCopy, signup: t.authSignupCopy, forgot: t.forgotCopy, recover: t.recoverCopy }[mode]}</p>
+          <form onSubmit={{ login: signIn, signup: signUp, forgot: sendReset, recover: saveNewPassword }[mode]} className="auth-form">
             {mode === "signup" && (
               <label>{t.name}
                 <input value={name} onChange={(event) => setName(event.target.value)} placeholder={t.namePlaceholder} autoComplete="name" />
               </label>
             )}
-            <label>{t.email}
-              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" required />
-            </label>
-            <label>{t.password}
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t.passwordPlaceholder} autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={6} required />
-            </label>
+            {mode !== "recover" && (
+              <label>{t.email}
+                <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" required />
+              </label>
+            )}
+            {mode !== "forgot" && (
+              <label>{mode === "recover" ? t.newPassword : t.password}
+                <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t.passwordPlaceholder} autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={6} required />
+              </label>
+            )}
+            {mode === "login" && (
+              <button type="button" className="text-button forgot-link" onClick={() => { setMode("forgot"); setErrorMessage(""); setSuccessMessage(""); }}>
+                {t.forgotLink}
+              </button>
+            )}
             {errorMessage && <p className="message message-error">{errorMessage}</p>}
             {successMessage && <p className="message message-success">{successMessage}</p>}
             <button className="button button-primary full-button" type="submit" disabled={loading}>
-              {loading ? t.wait : mode === "login" ? t.signIn : t.createAccount}
+              {loading ? t.wait : { login: t.signIn, signup: t.createAccount, forgot: t.sendLink, recover: t.savePassword }[mode]}
             </button>
           </form>
-          <button className="text-button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setErrorMessage(""); setSuccessMessage(""); }}>
-            {mode === "login" ? t.toSignup : t.toLogin}
-          </button>
+          {(mode === "login" || mode === "signup") && (
+            <button className="text-button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setErrorMessage(""); setSuccessMessage(""); }}>
+              {mode === "login" ? t.toSignup : t.toLogin}
+            </button>
+          )}
+          {mode === "forgot" && (
+            <button className="text-button" onClick={() => { setMode("login"); setErrorMessage(""); setSuccessMessage(""); }}>
+              {t.backToLogin}
+            </button>
+          )}
         </section>
       </main>
     )
