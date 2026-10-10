@@ -11,7 +11,7 @@ export function startAnchors(canvas, options) {
   const BOX = { w: 591, h: 628 }
   const path = new Path2D(PROFILE)
 
-  let W = 0, H = 0, dpr = 1, scale = 1, ox = 0, oy = 0
+  let W = 0, H = 0, dpr = 1, scale = 1, ox = 0, oy = 0, fadeFrom = 0
   let points = []
   let embers = []
   let flashes = []
@@ -19,18 +19,31 @@ export function startAnchors(canvas, options) {
 
   function layout() {
     dpr = Math.min(window.devicePixelRatio || 1, 2)
-    W = canvas.clientWidth
-    H = canvas.clientHeight
+    const host = canvas.parentElement || canvas
+    W = host.clientWidth
+    H = host.clientHeight
     canvas.width = Math.floor(W * dpr)
     canvas.height = Math.floor(H * dpr)
+    // fixed pixel size so the drawing never gets stretched between rebuilds
+    canvas.style.width = W + "px"
+    canvas.style.height = H + "px"
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     const narrow = W < 760
-    const targetH = narrow ? H * 0.6 : H * 0.9
-    scale = targetH / BOX.h
-    const figW = BOX.w * scale
-    ox = narrow ? W - figW * 0.85 : W - figW - W * 0.03
-    oy = H - BOX.h * scale
+    if (narrow) {
+      // phones: the whole head sits in the empty space above the text, shoulders fade out
+      const avail = Math.max(220, H * 0.5)
+      scale = Math.min(avail / BOX.h, (W * 0.95) / BOX.w)
+      const figW = BOX.w * scale
+      ox = W - figW - W * 0.02
+      oy = 72
+    } else {
+      scale = (H * 0.9) / BOX.h
+      const figW = BOX.w * scale
+      ox = W - figW - W * 0.03
+      oy = H - BOX.h * scale
+    }
+    fadeFrom = narrow ? BOX.h * 0.55 : BOX.h - 60
 
     // sample points inside the silhouette
     const probe = document.createElement("canvas").getContext("2d")
@@ -41,7 +54,10 @@ export function startAnchors(canvas, options) {
       y: oy + by * scale,
       phase: Math.random() * Math.PI * 2,
       size: edge ? 1.1 : (Math.random() < 0.12 ? 1.4 : 0.9),
-      base: (edge ? 0.55 : 0.16) * (narrow ? 0.5 : 1) * Math.min(1, bx / 140) * Math.min(1, (BOX.h - by) / 60 + 0.35),
+      base: (edge ? 0.55 : 0.16) * (narrow ? 0.6 : 1) * Math.min(1, bx / 140) *
+        (narrow
+          ? Math.max(0, 1 - Math.max(0, by - fadeFrom) / (BOX.h - fadeFrom))
+          : Math.min(1, (BOX.h - by) / 60 + 0.35)),
     })
     // contour: a dense line of points that draws the profile
     const edgeCount = narrow ? 900 : 1700
@@ -74,7 +90,7 @@ export function startAnchors(canvas, options) {
   // anchors sit mostly in the head and chest
   function anchorSpot() {
     for (let i = 0; i < 40; i++) {
-      const head = Math.random() < 0.7
+      const head = W < 760 || Math.random() < 0.7
       const bx = head ? 230 + Math.random() * 300 : 200 + Math.random() * 340
       const by = head ? 40 + Math.random() * 300 : 450 + Math.random() * 150
       if (inside(bx, by)) return { bx, by }
@@ -105,7 +121,15 @@ export function startAnchors(canvas, options) {
     mouse.y = e.clientY - r.top
   }
   const onLeave = () => { mouse.x = mouse.y = -9999 }
-  const onResize = () => { layout(); embers = [] }
+  const host = canvas.parentElement || canvas
+  let lastW = host.clientWidth, lastH = host.clientHeight
+  const onResize = () => {
+    const w = host.clientWidth, h = host.clientHeight
+    // mobile browsers resize the height when the address bar hides; only rebuild on real changes
+    if (w === lastW && Math.abs(h - lastH) < 140) return
+    lastW = w; lastH = h
+    layout(); embers = []
+  }
   window.addEventListener("pointermove", onMove, { passive: true })
   document.addEventListener("pointerleave", onLeave)
   window.addEventListener("resize", onResize)
