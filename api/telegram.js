@@ -64,10 +64,10 @@ async function handleMessage(message) {
 
   if (text.startsWith("/start") || text.startsWith("/help")) {
     return say(chatId,
-      "<b>ДНЕВНИК ЭНЕРГИИ</b>\n" +
+      "<b>THRIVE</b>\n" +
       "Привет! Я помогу замечать, что даёт тебе силы.\n\n" +
       "<b>01 — Подключение</b>\n" +
-      "Открой Energy Journal, создай код подключения и отправь:\n<code>/link ТВОЙ_КОД</code>\n\n" +
+      "Открой Thrive, создай код подключения и отправь:\n<code>/link ТВОЙ_КОД</code>\n\n" +
       "<b>02 — Записи</b>\n" +
       "Пиши обычным сообщением, например:\n<code>Прогулка — энергия 8</code>\n<code>Работа над проектом, 4/10</code>\n\n" +
       "<b>03 — Команды</b>\n" +
@@ -77,7 +77,7 @@ async function handleMessage(message) {
 
   if (text.startsWith("/link")) {
     const code = text.split(/\s+/)[1]?.trim()
-    if (!code) return say(chatId, "Открой сайт Energy Journal и скопируй код подключения из своего аккаунта. Затем отправь <code>/link КОД</code>.")
+    if (!code) return say(chatId, "Открой сайт Thrive и скопируй код подключения из своего аккаунта. Затем отправь <code>/link КОД</code>.")
     const { data: pairing, error } = await supabase
       .from("telegram_link_codes")
       .select("user_id, expires_at")
@@ -106,7 +106,7 @@ async function handleMessage(message) {
   }
 
   const user = await linkedUser(chatId)
-  if (!user) return say(chatId, "Сначала подключи аккаунт: открой сайт Energy Journal, создай код подключения и отправь <code>/link КОД</code>.")
+  if (!user) return say(chatId, "Сначала подключи аккаунт: открой сайт Thrive, создай код подключения и отправь <code>/link КОД</code>.")
 
   if (text.startsWith("/reminder")) {
     const value = text.split(/\s+/)[1]
