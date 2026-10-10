@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   try {
     const now = new Date()
     const { data: users, error } = await supabase.from("telegram_users")
-      .select("user_id, chat_id, timezone, reminder_time")
+      .select("*")
       .eq("reminders_enabled", true)
     if (error) throw error
 
@@ -61,9 +61,16 @@ export default async function handler(req, res) {
         .select("energy").eq("user_id", user.user_id).eq("date", date)
       if (entriesError) throw entriesError
 
-      const prompt = entries?.length
-        ? `<b>Как прошёл твой день?</b>\nСегодня ты добавил(а) ${entries.length} ${entries.length === 1 ? "запись" : "записей"} в дневник. Средняя энергия — <b>${(entries.reduce((sum, entry) => sum + Number(entry.energy || 0), 0) / entries.length).toFixed(1)}/10</b>.\n\nЧто сегодня дало тебе силы, а что их забрало? Можешь ответить прямо здесь:\n<code>Прогулка — энергия 8</code>`
-        : "<b>Небольшая пауза для себя</b>\nКак ты сегодня себя чувствовал(а)? Запиши одно занятие и оцени энергию от 1 до 10. Например:\n<code>Прогулка — энергия 8</code>"
+      const average = entries?.length
+        ? (entries.reduce((sum, entry) => sum + Number(entry.energy || 0), 0) / entries.length).toFixed(1)
+        : null
+      const prompt = user.language === "ru"
+        ? (average !== null
+          ? `<b>Как прошёл твой день?</b>\nСегодня ты добавил(а) ${entries.length} ${entries.length === 1 ? "запись" : "записей"} в дневник. Средняя энергия — <b>${average}/10</b>.\n\nЧто сегодня дало тебе силы, а что их забрало? Можешь ответить прямо здесь:\n<code>Прогулка — энергия 8</code>`
+          : "<b>Небольшая пауза для себя</b>\nКак ты сегодня себя чувствовал(а)? Запиши одно занятие и оцени энергию от 1 до 10. Например:\n<code>Прогулка — энергия 8</code>")
+        : (average !== null
+          ? `<b>How was your day?</b>\nYou added ${entries.length} ${entries.length === 1 ? "entry" : "entries"} today. Average energy — <b>${average}/10</b>.\n\nWhat gave you energy today, and what took it? You can reply right here:\n<code>Walk — energy 8</code>`
+          : "<b>A short pause for yourself</b>\nHow did you feel today? Log one activity and rate your energy from 1 to 10. For example:\n<code>Walk — energy 8</code>")
       await sendMessage(user.chat_id, prompt)
       const { error: logError } = await supabase.from("telegram_reminder_log").insert({
         user_id: user.user_id, reminder_date: date,

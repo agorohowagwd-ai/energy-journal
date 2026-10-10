@@ -34,3 +34,6 @@ create table if not exists public.telegram_reminder_log (
 );
 alter table public.telegram_reminder_log enable row level security;
 -- Intentionally no browser-access policies. Only server-side service-role code accesses this table.
+
+-- Language for bot messages and reminders (en/ru). Safe to run again.
+alter table public.telegram_users add column if not exists language text not null default 'en';

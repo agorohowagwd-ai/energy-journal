@@ -10,15 +10,12 @@ import {
   ReferenceDot,
 } from "recharts"
 import { supabase } from "./supabase"
+import { T, initialLang, saveLang, categoryLabel } from "./i18n"
+import LiquidBackground from "./LiquidBackground"
 import "./App.css"
 
 const CATEGORIES = ["Work", "Health", "Study", "Social", "Rest", "Other"]
-const MOODS = [
-  { value: "🙂", label: "Good" },
-  { value: "😐", label: "Neutral" },
-  { value: "😃", label: "Great" },
-  { value: "⚡", label: "Charged" },
-]
+const MOODS = ["🙂", "😐", "😃", "⚡"]
 
 function localDate(date = new Date()) {
   const year = date.getFullYear()
@@ -27,12 +24,12 @@ function localDate(date = new Date()) {
   return `${year}-${month}-${day}`
 }
 
-function energyLabel(value) {
-  if (value <= 3) return "Drains a lot of energy"
-  if (value <= 5) return "Mostly drains energy"
-  if (value <= 6) return "Neutral"
-  if (value <= 8) return "Mostly gives energy"
-  return "Energizing"
+function energyLabel(value, labels) {
+  if (value <= 3) return labels[0]
+  if (value <= 5) return labels[1]
+  if (value <= 6) return labels[2]
+  if (value <= 8) return labels[3]
+  return labels[4]
 }
 
 function energyTone(value) {
@@ -64,6 +61,24 @@ export default function App() {
   const [saving, setSaving] = useState(false)
   const [telegramCode, setTelegramCode] = useState("")
   const [telegramLoading, setTelegramLoading] = useState(false)
+  const [lang, setLang] = useState(initialLang)
+  const t = T[lang]
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
+
+  function toggleLang() {
+    const next = lang === "en" ? "ru" : "en"
+    setLang(next)
+    saveLang(next)
+  }
+
+  const langSwitch = (extra = "") => (
+    <button type="button" className={`lang-switch ${extra}`} onClick={toggleLang} aria-label={t.switchLabel}>
+      {t.switchTo}
+    </button>
+  )
 
   useEffect(() => {
     let mounted = true
@@ -128,7 +143,7 @@ export default function App() {
     }
 
     setMode("login")
-    setSuccessMessage("Account created. Confirm your email if asked, then sign in.")
+    setSuccessMessage(t.msgAccountCreated)
   }
 
   async function signIn(event) {
@@ -171,7 +186,7 @@ export default function App() {
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData?.user) {
       setTelegramLoading(false)
-      setErrorMessage("Sign in to connect Telegram.")
+      setErrorMessage(t.msgSignInForTelegram)
       return
     }
     const { error } = await supabase.from("telegram_link_codes").insert({
@@ -181,7 +196,7 @@ export default function App() {
     })
     setTelegramLoading(false)
     if (error) {
-      setErrorMessage("Could not create a code. Check that the Telegram SQL setup has been run in Supabase.")
+      setErrorMessage(t.msgCodeFailed)
       return
     }
     setTelegramCode(code)
@@ -193,7 +208,7 @@ export default function App() {
     setSuccessMessage("")
 
     if (!activity.trim()) {
-      setErrorMessage("Add an activity first.")
+      setErrorMessage(t.msgNeedActivity)
       return
     }
 
@@ -201,7 +216,7 @@ export default function App() {
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData?.user) {
       setSaving(false)
-      setErrorMessage("Your session has ended. Please sign in again.")
+      setErrorMessage(t.msgSessionEnded)
       return
     }
 
@@ -226,7 +241,7 @@ export default function App() {
     setEnergy(6)
     setMood("🙂")
     setEntryDate(localDate())
-    setSuccessMessage("Entry saved.")
+    setSuccessMessage(t.msgSaved)
     await loadEntries()
   }
 
@@ -306,7 +321,7 @@ export default function App() {
         date.setMonth(date.getMonth() - (11 - index))
         const prefix = localDate(date).slice(0, 7)
         return {
-          day: date.toLocaleDateString("en-US", { month: "short" }),
+          day: date.toLocaleDateString(t.locale, { month: "short" }),
           date: null,
           energy: avg(entries.filter((entry) => entry.date?.startsWith(prefix))),
         }
@@ -319,12 +334,12 @@ export default function App() {
       date.setDate(date.getDate() - (length - 1 - index))
       const isoDate = localDate(date)
       return {
-        day: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+        day: date.toLocaleDateString(t.locale, { month: "short", day: "numeric" }),
         date: isoDate,
         energy: avg(entries.filter((entry) => entry.date === isoDate)),
       }
     })
-  }, [entries, range])
+  }, [entries, range, t.locale])
 
   const chartPeaks = useMemo(() => {
     const values = chartData.map((point) => point.energy).filter((value) => value !== null)
@@ -344,36 +359,35 @@ export default function App() {
   const observation = !energyStats
     ? null
     : energyStats.recentAverage >= 7
-      ? { text: "Your recent entries show consistently strong energy levels. You perform best when activity remains structured and predictable.", pattern: "High Stability", recovery: "Strong" }
+      ? t.observations.high
       : energyStats.recentAverage >= 5
-        ? { text: "Your energy remains stable but fluctuates throughout the week. Small improvements in routine consistency could increase performance.", pattern: "Moderate Stability", recovery: "Moderate" }
-        : { text: "Recent entries indicate lower energy patterns. Recovery, sleep quality and workload balance may require attention.", pattern: "Variable Energy", recovery: "Needs Attention" }
+        ? t.observations.mid
+        : t.observations.low
 
   if (view === "landing") {
     return (
       <main className="landing">
+        <LiquidBackground />
         <div className="landing-bar">
           <span className="landing-logo">Thrive</span>
-          <span>Personal energy system</span>
+          <span className="landing-tag">{t.landingTag}</span>
+          {langSwitch("on-dark")}
         </div>
-        <section className="landing-content">
-          <p className="eyebrow">Welcome to Thrive</p>
-          <h1>Your personal<br /><span>energy operating system.</span></h1>
-          <p className="landing-copy">
-            Log daily activity, mood and energy levels. Understand patterns in your
-            focus and performance, and build habits that improve your energy over time.
-          </p>
+        <section className="landing-content" key={lang}>
+          <p className="eyebrow">{t.landingEyebrow}</p>
+          <h1>{t.landingTitle1}<br /><span>{t.landingTitle2}</span></h1>
+          <p className="landing-copy">{t.landingCopy}</p>
           <button className="button button-primary landing-button" onClick={() => setView("auth")}>
-            Start Thrive <span aria-hidden="true">↗</span>
+            {t.landingButton} <span aria-hidden="true">↗</span>
           </button>
-          <p className="landing-footnote">Track energy · Detect patterns · Build consistency</p>
+          <p className="landing-footnote">{t.landingFootnote}</p>
         </section>
         <svg className="spin-badge" viewBox="0 0 100 100" aria-hidden="true">
           <defs>
             <path id="badge-circle" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
           </defs>
           <text fontSize="9.5" fill="currentColor" letterSpacing="2">
-            <textPath href="#badge-circle">TRACK · DETECT · UNLOCK · THRIVE ·</textPath>
+            <textPath href="#badge-circle">{t.badge}</textPath>
           </text>
         </svg>
       </main>
@@ -385,43 +399,38 @@ export default function App() {
       <main className="auth-page">
         <section className="auth-card">
           <button className="back-link" onClick={() => { setView("landing"); setErrorMessage(""); }}>
-            ← Back
+            {t.back}
           </button>
-          <div className="auth-logo">Thrive</div>
-          <h1>{mode === "login" ? "Welcome back" : "Create account"}</h1>
-          <p className="muted">{mode === "login" ? "Continue tracking your energy." : "Your entries are stored in your personal account."}</p>
+          <div className="auth-top"><span className="auth-logo">Thrive</span>{langSwitch()}</div>
+          <h1>{mode === "login" ? t.welcomeBack : t.createAccount}</h1>
+          <p className="muted">{mode === "login" ? t.authLoginCopy : t.authSignupCopy}</p>
           <form onSubmit={mode === "login" ? signIn : signUp} className="auth-form">
             {mode === "signup" && (
-              <label>Name
-                <input value={name} onChange={(event) => setName(event.target.value)} placeholder="What should we call you" autoComplete="name" />
+              <label>{t.name}
+                <input value={name} onChange={(event) => setName(event.target.value)} placeholder={t.namePlaceholder} autoComplete="name" />
               </label>
             )}
-            <label>Email
+            <label>{t.email}
               <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" required />
             </label>
-            <label>Password
-              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 6 characters" autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={6} required />
+            <label>{t.password}
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t.passwordPlaceholder} autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={6} required />
             </label>
             {errorMessage && <p className="message message-error">{errorMessage}</p>}
             {successMessage && <p className="message message-success">{successMessage}</p>}
             <button className="button button-primary full-button" type="submit" disabled={loading}>
-              {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+              {loading ? t.wait : mode === "login" ? t.signIn : t.createAccount}
             </button>
           </form>
           <button className="text-button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setErrorMessage(""); setSuccessMessage(""); }}>
-            {mode === "login" ? "No account? Create one" : "Already have an account? Sign in"}
+            {mode === "login" ? t.toSignup : t.toLogin}
           </button>
         </section>
       </main>
     )
   }
 
-  const navItems = [
-    { id: "overview", label: "Dashboard" },
-    { id: "analytics", label: "Analytics" },
-    { id: "journal", label: "Timeline" },
-    { id: "insights", label: "Insights" },
-  ]
+  const navItems = ["overview", "analytics", "journal", "insights"].map((id) => ({ id, label: t.nav[id] }))
 
   function goTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -438,22 +447,22 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-top">
           <span className="sidebar-brand">Thrive</span>
-          <span className="eyebrow">Personal energy system</span>
+          {langSwitch("on-dark")}
         </div>
 
         <div className="sidebar-score">
-          <p className="eyebrow">Energy Score</p>
+          <p className="eyebrow">{t.energyScore}</p>
           <strong>{averageEnergy ?? "0"}</strong>
-          <span>Personal index</span>
+          <span>{t.personalIndex}</span>
         </div>
 
         <div className="sidebar-stats">
-          <div><p className="eyebrow">Entries</p><strong>{entries.length}</strong></div>
-          <div><p className="eyebrow">Streak</p><strong>{streak}</strong></div>
+          <div><p className="eyebrow">{t.entriesLabel}</p><strong>{entries.length}</strong></div>
+          <div><p className="eyebrow">{t.streakLabel}</p><strong>{streak}</strong></div>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Navigation">
-          <p className="eyebrow">Navigation</p>
+        <nav className="sidebar-nav" aria-label={t.navigation}>
+          <p className="eyebrow">{t.navigation}</p>
           {navItems.map((item, index) => (
             <button key={item.id} type="button" onClick={() => goTo(item.id)}>
               <small>0{index + 1}</small>{item.label}
@@ -462,8 +471,8 @@ export default function App() {
         </nav>
 
         <div className="sidebar-recent">
-          <p className="eyebrow">Recent Activity</p>
-          {groupedByDate.length === 0 && <p className="sidebar-empty">No entries yet</p>}
+          <p className="eyebrow">{t.recentActivity}</p>
+          {groupedByDate.length === 0 && <p className="sidebar-empty">{t.noEntries}</p>}
           {groupedByDate.slice(0, 7).map(([date, items]) => (
             <div key={date} className="sidebar-day">
               <time>{date}</time>
@@ -475,7 +484,7 @@ export default function App() {
                   onClick={() => selectEntry(item.id)}
                 >
                   <span className="sidebar-entry-row"><span>{item.activity}</span><span>{item.energy}</span></span>
-                  <span className="sidebar-entry-cat">{item.category}</span>
+                  <span className="sidebar-entry-cat">{categoryLabel(item.category, lang)}</span>
                 </button>
               ))}
             </div>
@@ -483,14 +492,14 @@ export default function App() {
         </div>
 
         <div className="sidebar-premium">
-          <p className="eyebrow">Premium</p>
-          <strong>AI Energy Insights</strong>
-          <span>Forecast trends, detect patterns and discover your peak performance.</span>
+          <p className="eyebrow">{t.premium}</p>
+          <strong>{t.premiumTitle}</strong>
+          <span>{t.premiumCopy}</span>
         </div>
 
         <div className="sidebar-bottom">
           <span className="user-email">{session?.user?.email}</span>
-          <button className="button button-quiet full-button" onClick={logout}>Logout</button>
+          <button className="button button-quiet full-button" onClick={logout}>{t.logout}</button>
         </div>
       </aside>
 
@@ -498,25 +507,25 @@ export default function App() {
         {/* TOPBAR (mobile) */}
         <header className="topbar">
           <span className="brand">Thrive</span>
-          <button className="button button-quiet" onClick={logout}>Logout</button>
+          <span className="topbar-actions">{langSwitch("on-dark")}<button className="button button-quiet" onClick={logout}>{t.logout}</button></span>
         </header>
 
         {/* HERO */}
         <section className="hero-band" id="overview">
           <div className="hero-meta">
             <span>Thrive</span>
-            <span>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
+            <span>{new Date().toLocaleDateString(t.locale, { weekday: "long", month: "long", day: "numeric" })}</span>
           </div>
           <div className="page-heading">
-            <h1>Dashboard</h1>
-            <p className="muted">Track energy, detect patterns, and unlock AI insights</p>
+            <h1>{t.dashboard}</h1>
+            <p className="muted">{t.dashboardCopy}</p>
           </div>
           <svg className="spin-badge" viewBox="0 0 100 100" aria-hidden="true">
             <defs>
               <path id="badge-circle-app" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
             </defs>
             <text fontSize="9.5" fill="currentColor" letterSpacing="2">
-              <textPath href="#badge-circle-app">TRACK · DETECT · UNLOCK · THRIVE ·</textPath>
+              <textPath href="#badge-circle-app">{t.badge}</textPath>
             </text>
           </svg>
         </section>
@@ -526,13 +535,10 @@ export default function App() {
           {successMessage && <p className="message message-success">{successMessage}</p>}
 
           {/* KPI */}
-          <section className="kpi-grid" aria-label="Key numbers">
-            {[
-              { label: "Average", value: averageEnergy ?? "0", note: "Energy level" },
-              { label: "Peak", value: energyStats?.highest ?? "0", note: "Highest value" },
-              { label: "Low", value: energyStats?.lowest ?? "0", note: "Minimum energy" },
-              { label: "Streak", value: streak, note: "Active days" },
-            ].map((card) => (
+          <section className="kpi-grid" aria-label={t.dashboard}>
+            {[averageEnergy ?? "0", energyStats?.highest ?? "0", energyStats?.lowest ?? "0", streak].map((value, index) => ({
+              label: t.kpi[index][0], value, note: t.kpi[index][1],
+            })).map((card) => (
               <article key={card.label} className="kpi">
                 <p className="eyebrow">{card.label}</p>
                 <strong>{card.value}</strong>
@@ -547,23 +553,23 @@ export default function App() {
           <div className="page">
             <div className="band-head">
               <div>
-                <p className="eyebrow">AI Coach</p>
-                <h2>Energy Intelligence</h2>
+                <p className="eyebrow">{t.aiCoach}</p>
+                <h2>{t.aiTitle}</h2>
               </div>
-              <span className="live-pill"><span />Live Analysis</span>
+              <span className="live-pill"><span />{t.live}</span>
             </div>
             <p className="band-lead">
-              {observation ? observation.text : "Start logging entries to unlock personalized AI-powered energy insights."}
+              {observation ? observation.text : t.aiEmpty}
             </p>
             <div className="band-cells">
-              <div><p className="eyebrow">Pattern</p><strong>{observation?.pattern ?? "—"}</strong></div>
-              <div><p className="eyebrow">Peak Energy</p><strong>{energyStats?.highest ?? 0}/10</strong></div>
-              <div><p className="eyebrow">Recovery</p><strong>{observation?.recovery ?? "—"}</strong></div>
+              <div><p className="eyebrow">{t.pattern}</p><strong>{observation?.pattern ?? "—"}</strong></div>
+              <div><p className="eyebrow">{t.peakEnergy}</p><strong>{energyStats?.highest ?? 0}/10</strong></div>
+              <div><p className="eyebrow">{t.recovery}</p><strong>{observation?.recovery ?? "—"}</strong></div>
             </div>
             {bestEntry && (
               <p className="band-note">
-                Most energy after: {bestEntry.activity} ({bestEntry.energy}/10)
-                {hardestEntry && hardestEntry !== bestEntry ? ` · Least energy after: ${hardestEntry.activity} (${hardestEntry.energy}/10)` : ""}
+                {t.mostEnergy}: {bestEntry.activity} ({bestEntry.energy}/10)
+                {hardestEntry && hardestEntry !== bestEntry ? ` · ${t.leastEnergy}: ${hardestEntry.activity} (${hardestEntry.energy}/10)` : ""}
               </p>
             )}
           </div>
@@ -572,23 +578,23 @@ export default function App() {
         <div className="page">
           {/* CHART */}
           <section className="chart-section" id="analytics">
-            <div className="range-switch" role="group" aria-label="Range">
+            <div className="range-switch" role="group" aria-label={t.energyTimeline}>
               {["week", "month", "year"].map((key) => (
                 <button key={key} type="button" className={`pill-sm ${range === key ? "active" : ""}`} onClick={() => setRange(key)} aria-pressed={range === key}>
-                  {key.toUpperCase()}
+                  {t.ranges[key].toUpperCase()}
                 </button>
               ))}
             </div>
             <div className="section-head">
               <div>
-                <p className="eyebrow">Energy Timeline</p>
-                <h2>{range.toUpperCase()} View</h2>
+                <p className="eyebrow">{t.energyTimeline}</p>
+                <h2>{t.ranges[range]} {t.view}</h2>
               </div>
-              <span className="section-meta">{chartData.filter((point) => point.energy !== null).length} points</span>
+              <span className="section-meta">{chartData.filter((point) => point.energy !== null).length} {t.points}</span>
             </div>
             {chartData.filter((point) => point.energy !== null).length < 2 ? (
               <div className="chart-empty">
-                <p>Add at least two entries</p>
+                <p>{t.needTwo}</p>
               </div>
             ) : (
               <div className="chart-wrap">
@@ -597,7 +603,7 @@ export default function App() {
                     <CartesianGrid vertical={false} stroke="#000" strokeOpacity={0.08} />
                     <XAxis dataKey="day" tickLine={false} axisLine={{ stroke: "#000" }} tick={{ fill: "#6d6d6d", fontSize: 11 }} interval="preserveStartEnd" minTickGap={16} />
                     <YAxis domain={[0, 10]} tickLine={false} axisLine={false} tick={{ fill: "#6d6d6d", fontSize: 11 }} width={40} />
-                    <Tooltip cursor={{ stroke: "#000", strokeWidth: 1 }} contentStyle={{ borderRadius: 0, border: "1px solid #000", boxShadow: "none", fontSize: 13 }} formatter={(value) => [`${value}/10`, "Energy"]} />
+                    <Tooltip cursor={{ stroke: "#000", strokeWidth: 1 }} contentStyle={{ borderRadius: 0, border: "1px solid #000", boxShadow: "none", fontSize: 13 }} formatter={(value) => [`${value}/10`, t.energyWord]} />
                     <Line
                       type="monotone"
                       dataKey="energy"
@@ -619,53 +625,53 @@ export default function App() {
           {/* FORM + TIMELINE */}
           <div className="work-grid" id="journal">
             <section className="entry-panel">
-              <p className="eyebrow">01 — Log</p>
-              <h2>Log Energy</h2>
+              <p className="eyebrow">{t.logEyebrow}</p>
+              <h2>{t.logTitle}</h2>
 
               <form onSubmit={addEntry} className="entry-form">
-                <input aria-label="Activity" value={activity} onChange={(event) => setActivity(event.target.value)} placeholder="Activity" maxLength={120} required />
-                <textarea aria-label="Notes" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notes" rows={3} maxLength={1000} />
+                <input aria-label={t.activity} value={activity} onChange={(event) => setActivity(event.target.value)} placeholder={t.activity} maxLength={120} required />
+                <textarea aria-label={t.notes} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={t.notes} rows={3} maxLength={1000} />
 
                 <fieldset className="rating-field">
                   <div className="rating-heading">
-                    <legend>Energy</legend>
+                    <legend>{t.energy}</legend>
                     <strong className={`rating-number tone-${energyTone(Number(energy))}`}>{energy}<span>/10</span></strong>
                   </div>
-                  <input className="energy-range" type="range" min="1" max="10" value={energy} onChange={(event) => setEnergy(Number(event.target.value))} aria-label="Energy from 1 to 10" />
-                  <p className={`energy-hint tone-text-${energyTone(Number(energy))}`}>{energyLabel(Number(energy))}</p>
+                  <input className="energy-range" type="range" min="1" max="10" value={energy} onChange={(event) => setEnergy(Number(event.target.value))} aria-label={t.energy} />
+                  <p className={`energy-hint tone-text-${energyTone(Number(energy))}`}>{energyLabel(Number(energy), t.energyLabels)}</p>
                 </fieldset>
 
-                <div className="pill-row" role="group" aria-label="Category">
+                <div className="pill-row" role="group" aria-label={t.category}>
                   {CATEGORIES.map((item) => (
                     <button key={item} type="button" className={`pill-sm ${category === item ? "active" : ""}`} onClick={() => setCategory(item)} aria-pressed={category === item}>
+                      {categoryLabel(item, lang)}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mood-row" role="group" aria-label={t.mood}>
+                  {MOODS.map((item) => (
+                    <button key={item} type="button" title={t.moods[item]} aria-label={t.moods[item]} className={`mood-dot ${mood === item ? "selected" : ""}`} onClick={() => setMood(item)} aria-pressed={mood === item}>
                       {item}
                     </button>
                   ))}
                 </div>
 
-                <div className="mood-row" role="group" aria-label="Mood">
-                  {MOODS.map((item) => (
-                    <button key={item.value} type="button" title={item.label} className={`mood-dot ${mood === item.value ? "selected" : ""}`} onClick={() => setMood(item.value)} aria-pressed={mood === item.value}>
-                      {item.value}
-                    </button>
-                  ))}
-                </div>
-
-                <label className="date-field">Date
+                <label className="date-field">{t.date}
                   <input type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} required />
                 </label>
 
                 <button className="button button-primary full-button" type="submit" disabled={saving}>
-                  {saving ? "Saving…" : "Save Entry"}
+                  {saving ? t.saving : t.save}
                 </button>
               </form>
             </section>
 
             <section className="journal-panel">
-              <p className="eyebrow">02 — History</p>
-              <h2 className="journal-title">Timeline</h2>
+              <p className="eyebrow">{t.historyEyebrow}</p>
+              <h2 className="journal-title">{t.timeline}</h2>
               {entries.length === 0 ? (
-                <p className="history-empty">No entries yet</p>
+                <p className="history-empty">{t.noEntries}</p>
               ) : (
                 <div className="journal-list">
                   {entries.map((entry) => (
@@ -678,7 +684,7 @@ export default function App() {
                       <div className="journal-main">
                         <h3>{entry.activity}</h3>
                         <div className="journal-top">
-                          <span>{entry.category || "Other"}</span>
+                          <span>{categoryLabel(entry.category, lang)}</span>
                           <time>{entry.date}</time>
                           <span>{entry.mood}</span>
                         </div>
@@ -697,20 +703,20 @@ export default function App() {
         <section className="band-dark telegram-band" id="telegram">
           <div className="page telegram-inner">
             <div>
-              <p className="eyebrow">Quick entries</p>
-              <h2>Connect Telegram</h2>
-              <p className="band-lead small">Log activities in the chat and they appear in your journal. The bot also reminds you in the evening to rate your day.</p>
+              <p className="eyebrow">{t.tgEyebrow}</p>
+              <h2>{t.tgTitle}</h2>
+              <p className="band-lead small">{t.tgCopy}</p>
             </div>
             <div className="telegram-action">
               <button className="button button-light" onClick={createTelegramCode} disabled={telegramLoading}>
-                {telegramLoading ? "Creating code…" : "Create connection code"}
+                {telegramLoading ? t.tgCreating : t.tgCreate}
               </button>
               {telegramCode && <div className="telegram-code-box">
-                <span>The code is valid for 10 minutes</span>
+                <span>{t.tgValid}</span>
                 <strong>{telegramCode}</strong>
-                <p>Open your bot and send:</p>
+                <p>{t.tgSend}</p>
                 <code>/link {telegramCode}</code>
-                <button className="text-button" onClick={() => { navigator.clipboard?.writeText("/link " + telegramCode)?.catch?.(() => {}) }}>Copy command</button>
+                <button className="text-button" onClick={() => { navigator.clipboard?.writeText("/link " + telegramCode)?.catch?.(() => {}) }}>{t.tgCopyCmd}</button>
               </div>}
             </div>
           </div>

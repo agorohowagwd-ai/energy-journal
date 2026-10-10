@@ -80,7 +80,7 @@ h1, h2, h3 { font-family: var(--font); letter-spacing: 0; text-wrap: balance; }
     radial-gradient(40% 45% at 25% 35%, var(--iri-mint) 0%, transparent 70%),
     radial-gradient(38% 42% at 70% 30%, var(--iri-amber) 0%, transparent 70%),
     radial-gradient(45% 50% at 55% 80%, var(--iri-oxblood) 0%, transparent 72%);
-  animation: iri-drift 22s var(--ease-expo) infinite alternate;
+  animation: iri-drift 14s ease-in-out infinite alternate;
 }
 
 .landing::after, .auth-page::after, .hero-band::after {
@@ -89,17 +89,19 @@ h1, h2, h3 { font-family: var(--font); letter-spacing: 0; text-wrap: balance; }
     radial-gradient(35% 40% at 15% 80%, var(--iri-amber) 0%, transparent 70%);
   mix-blend-mode: screen;
   opacity: .7;
-  animation: iri-drift-2 30s ease-in-out infinite alternate;
+  animation: iri-drift-2 18s ease-in-out infinite alternate;
 }
 
 @keyframes iri-drift {
-  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50% { transform: translate3d(6%, -4%, 0) rotate(8deg) scale(1.08); }
-  100% { transform: translate3d(-5%, 5%, 0) rotate(-6deg) scale(1.02); }
+  0%   { transform: translate3d(-12%, -8%, 0) rotate(0deg) scale(1); }
+  33%  { transform: translate3d(14%, -4%, 0) rotate(40deg) scale(1.2); }
+  66%  { transform: translate3d(4%, 14%, 0) rotate(85deg) scale(1.05); }
+  100% { transform: translate3d(-10%, 8%, 0) rotate(130deg) scale(1.25); }
 }
 @keyframes iri-drift-2 {
-  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
-  100% { transform: translate3d(-8%, 6%, 0) rotate(14deg); }
+  0%   { transform: translate3d(12%, 10%, 0) rotate(0deg) scale(1.1); }
+  50%  { transform: translate3d(-14%, -6%, 0) rotate(-60deg) scale(.9); }
+  100% { transform: translate3d(6%, -12%, 0) rotate(-120deg) scale(1.2); }
 }
 @keyframes reveal {
   from { opacity: 0; transform: translate3d(0, 24px, 0); }
@@ -174,7 +176,7 @@ h1, h2, h3 { font-family: var(--font); letter-spacing: 0; text-wrap: balance; }
   letter-spacing: 0;
 }
 .landing .eyebrow { color: rgba(255, 255, 255, .8); }
-.landing h1 { font-size: clamp(52px, 10vw, 150px); line-height: .9; margin: 22px 0 36px; font-weight: 400; }
+.landing h1 { font-size: clamp(48px, 8vw, 120px); line-height: .9; margin: 22px 0 36px; font-weight: 400; }
 .landing h1 span { color: inherit; font-weight: 300; }
 .landing-copy { max-width: 520px; margin: 0; color: rgba(255, 255, 255, .85); font-size: clamp(16px, 1.6vw, 21px); font-weight: 300; line-height: 1.45; }
 .landing-button { margin-top: 40px; border-color: var(--paper); background: transparent; color: var(--paper); }
@@ -502,9 +504,8 @@ textarea { resize: vertical; line-height: 1.58; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .landing::before, .landing::after,
-  .auth-page::before, .auth-page::after,
-  .hero-band::before, .hero-band::after,
+  .landing::before, .auth-page::before, .hero-band::before { animation-duration: 40s; }
+  .landing::after, .auth-page::after, .hero-band::after { animation-duration: 52s; }
   .spin-badge { animation: none; }
   .landing-content, .auth-card, .hero-band .page-heading { animation: none; }
 }
@@ -558,3 +559,31 @@ textarea { resize: vertical; line-height: 1.58; }
 .journal-list { border-top: 1px solid var(--obsidian); }
 .journal-entry h3 { margin: 0; }
 .journal-top { margin-top: 6px; }
+
+/* ───────── Landing liquid canvas + language switch ───────── */
+
+.liquid-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.landing.liquid-on::before, .landing.liquid-on::after { display: none; }
+.landing-bar, .landing .spin-badge { z-index: 2; }
+.landing-content { z-index: 2; }
+.landing-bar .landing-tag { flex: 1; text-align: center; }
+
+.lang-switch {
+  min-width: 44px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--pill);
+  border: 1px solid var(--obsidian);
+  background: transparent;
+  color: var(--obsidian);
+  font-size: 11px;
+  letter-spacing: .08em;
+  transition: letter-spacing .8s var(--ease-expo), border-color .4s ease;
+}
+.lang-switch:hover { letter-spacing: .16em; }
+.lang-switch.on-dark { border-color: var(--hair-dark); color: var(--paper); }
+.lang-switch.on-dark:hover { border-color: var(--paper); }
+.auth-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+.auth-top .auth-logo { margin: 0; }
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+@media (max-width: 560px) { .landing-bar .landing-tag { display: none; } .landing-bar { justify-content: space-between; } }
