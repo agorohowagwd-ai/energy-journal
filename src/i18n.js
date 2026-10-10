@@ -46,13 +46,23 @@ export function categoryLabel(value, lang) {
   return key ? CATEGORY_LABELS[key][lang] : value
 }
 
+// Mood is stored as a word key. Older entries stored an emoji, so map those for display.
+const MOOD_FROM_EMOJI = { "😣": "hard", "😕": "low", "😐": "neutral", "🙂": "good", "😊": "great", "😃": "great", "⚡": "charged" }
+const EXTRA_MOODS = { hard: { en: "Hard", ru: "Тяжело" }, low: { en: "Not great", ru: "Не очень" } }
+
+export function moodLabel(value, lang) {
+  if (!value) return ""
+  const key = MOOD_FROM_EMOJI[value] || value
+  return T[lang].moods[key] || EXTRA_MOODS[key]?.[lang] || ""
+}
+
 export const T = {
   en: {
     locale: "en-US",
     switchTo: "RU",
     switchLabel: "Переключить на русский",
 
-    moods: { "🙂": "Good", "😐": "Neutral", "😃": "Great", "⚡": "Charged" },
+    moods: { good: "Good", neutral: "Neutral", great: "Great", charged: "Charged" },
     energyLabels: ["Drains a lot of energy", "Mostly drains energy", "Neutral", "Mostly gives energy", "Energizing"],
 
     msgAccountCreated: "Account created. Confirm your email if asked, then sign in.",
@@ -159,7 +169,7 @@ export const T = {
     switchTo: "EN",
     switchLabel: "Switch to English",
 
-    moods: { "🙂": "Хорошо", "😐": "Нейтрально", "😃": "Отлично", "⚡": "Заряжен(а)" },
+    moods: { good: "Хорошо", neutral: "Нейтрально", great: "Отлично", charged: "Заряжен(а)" },
     energyLabels: ["Сильно забирает силы", "Скорее забирает силы", "Нейтрально", "Скорее даёт силы", "Заряжает"],
 
     msgAccountCreated: "Аккаунт создан. Если потребуется, подтверди почту и войди.",

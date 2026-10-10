@@ -196,14 +196,14 @@ async function handleMessage(message) {
 
   if (text.startsWith("/today")) {
     const { data, error } = await supabase.from("entries")
-      .select("activity, energy, mood, notes, date")
+      .select("activity, energy, notes, date")
       .eq("user_id", user.user_id)
       .eq("date", localDate(user.timezone))
       .order("created_at", { ascending: false })
     if (error) throw error
     if (!data?.length) return say(chatId, t.todayEmpty)
     const body = data.map((entry) =>
-      `<b>${esc(entry.energy)}/10</b>  ${esc(entry.activity)} ${esc(entry.mood || "")}` +
+      `<b>${esc(entry.energy)}/10</b>  ${esc(entry.activity)}` +
       (entry.notes ? `\n<i>${esc(entry.notes)}</i>` : ""),
     ).join("\n\n")
     return say(chatId, `<b>${t.todayTitle}</b> · ${data.length}\n\n${body}`)
@@ -236,7 +236,7 @@ async function handleMessage(message) {
     notes: "",
     energy: parsed.energy,
     category: "Other",
-    mood: "🙂",
+    mood: "good",
     date: localDate(user.timezone),
   })
   if (error) throw error

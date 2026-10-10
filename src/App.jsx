@@ -10,12 +10,12 @@ import {
   ReferenceDot,
 } from "recharts"
 import { supabase } from "./supabase"
-import { T, initialLang, saveLang, categoryLabel } from "./i18n"
+import { T, initialLang, saveLang, categoryLabel, moodLabel } from "./i18n"
 import LiquidBackground from "./LiquidBackground"
 import "./App.css"
 
 const CATEGORIES = ["Work", "Health", "Study", "Social", "Rest", "Other"]
-const MOODS = ["🙂", "😐", "😃", "⚡"]
+const MOODS = ["good", "neutral", "great", "charged"]
 
 function localDate(date = new Date()) {
   const year = date.getFullYear()
@@ -55,7 +55,7 @@ export default function App() {
   const [notes, setNotes] = useState("")
   const [energy, setEnergy] = useState(6)
   const [category, setCategory] = useState("Work")
-  const [mood, setMood] = useState("🙂")
+  const [mood, setMood] = useState("good")
   const [entryDate, setEntryDate] = useState(localDate())
   const [entries, setEntries] = useState([])
   const [saving, setSaving] = useState(false)
@@ -239,7 +239,7 @@ export default function App() {
     setActivity("")
     setNotes("")
     setEnergy(6)
-    setMood("🙂")
+    setMood("good")
     setEntryDate(localDate())
     setSuccessMessage(t.msgSaved)
     await loadEntries()
@@ -649,10 +649,10 @@ export default function App() {
                   ))}
                 </div>
 
-                <div className="mood-row" role="group" aria-label={t.mood}>
+                <div className="pill-row" role="group" aria-label={t.mood}>
                   {MOODS.map((item) => (
-                    <button key={item} type="button" title={t.moods[item]} aria-label={t.moods[item]} className={`mood-dot ${mood === item ? "selected" : ""}`} onClick={() => setMood(item)} aria-pressed={mood === item}>
-                      {item}
+                    <button key={item} type="button" className={`pill-sm ${mood === item ? "active" : ""}`} onClick={() => setMood(item)} aria-pressed={mood === item}>
+                      {t.moods[item]}
                     </button>
                   ))}
                 </div>
@@ -686,7 +686,7 @@ export default function App() {
                         <div className="journal-top">
                           <span>{categoryLabel(entry.category, lang)}</span>
                           <time>{entry.date}</time>
-                          <span>{entry.mood}</span>
+                          <span>{moodLabel(entry.mood, lang)}</span>
                         </div>
                         {entry.notes && <p className="journal-meta">{entry.notes}</p>}
                       </div>

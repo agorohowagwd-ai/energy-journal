@@ -53,7 +53,7 @@ float fbm(vec2 p) {
   mat2 rot = mat2(0.8, -0.6, 0.6, 0.8);
   for (int i = 0; i < 3; i++) {
     v += a * snoise(p);
-    p = rot * p * 1.9;
+    p = rot * p * 1.8;
     a *= 0.5;
   }
   return v;
@@ -62,41 +62,39 @@ float fbm(vec2 p) {
 void main() {
   vec2 uv = gl_FragCoord.xy / u_res.xy;
   vec2 p = (gl_FragCoord.xy - 0.5 * u_res.xy) / min(u_res.x, u_res.y);
-  float t = u_time * 0.03;
+  float t = u_time * 0.022;
 
   // cursor pulls the liquid gently
   vec2 aspect = u_res.xy / min(u_res.x, u_res.y);
   vec2 m = (u_mouse - 0.5) * aspect;
-  float pull = exp(-2.5 * length(p - m));
-  p += (m - p) * pull * 0.22;
+  p += (m - p) * exp(-2.2 * length(p - m)) * 0.2;
 
-  p *= 0.55;
+  // silky folds: two-level domain warp at a large scale
+  p *= 0.5;
   vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(5.2, -t * 0.7)));
-  vec2 r = vec2(fbm(p + 1.6 * q + vec2(1.7, 9.2) + t * 0.5),
-                fbm(p + 1.6 * q + vec2(8.3, 2.8) - t * 0.4));
-  float f = fbm(p + 1.8 * r);
+  vec2 r = vec2(fbm(p + 1.4 * q + vec2(1.7, 9.2) + t * 0.5),
+                fbm(p + 1.4 * q + vec2(8.3, 2.8) - t * 0.4));
+  float f = fbm(p + 1.5 * r);
 
-  vec3 black   = vec3(0.0);
   vec3 oxblood = vec3(0.647, 0.176, 0.145);
   vec3 amber   = vec3(1.0, 0.675, 0.180);
   vec3 mint    = vec3(0.627, 0.878, 0.671);
 
-  vec3 col = mix(black, oxblood, smoothstep(-0.45, 0.25, f));
-  col = mix(col, amber, smoothstep(0.15, 0.7, f + q.x * 0.45));
-  col = mix(col, mint, smoothstep(0.15, 0.75, r.y * 0.9 + f * 0.35));
+  // restrained palette: oxblood -> amber across the folds
+  vec3 hue = mix(oxblood, amber, smoothstep(-0.1, 0.5, f + 0.3 * r.x));
 
-  // soft silky sheen that drifts along the folds
-  float sheen = pow(0.5 + 0.5 * sin((f * 2.2 + r.x * 1.4) * 3.2 + t * 2.0), 5.0);
-  col += sheen * 0.16 * vec3(1.0, 0.97, 0.92);
+  // most of the frame stays black; light lives on the raised folds
+  float light = smoothstep(-0.05, 0.55, f + 0.25 * q.y);
+  vec3 col = hue * light * 0.9;
 
-  // large dark pools, like the reference
-  col *= 0.18 + 0.82 * smoothstep(-0.55, 0.35, f + 0.35 * q.y);
+  // thin glossy highlight that catches a little mint
+  float crest = pow(0.5 + 0.5 * sin((f * 2.0 + r.y) * 3.0 + t * 1.5), 7.0) * light;
+  col += mix(vec3(1.0), mint, 0.6) * crest * 0.22;
 
-  // vignette toward the edges and the bottom where the text sits
-  float vig = 1.0 - smoothstep(0.3, 1.3, length((uv - vec2(0.5, 0.62)) * vec2(1.0, 1.25)));
-  col *= mix(0.3, 1.0, vig);
-  // keep the lower-left text area calmer and darker
-  col *= mix(0.4, 1.0, smoothstep(0.0, 0.65, uv.y + (1.0 - uv.x) * 0.0 + uv.x * 0.15));
+  // vignette and a calmer lower-left where the text sits
+  float vig = 1.0 - smoothstep(0.35, 1.3, length((uv - vec2(0.55, 0.6)) * vec2(1.0, 1.2)));
+  col *= mix(0.25, 1.0, vig);
+  col *= mix(0.5, 1.0, smoothstep(0.0, 0.7, uv.y + uv.x * 0.2));
 
   gl_FragColor = vec4(col, 1.0);
 }
