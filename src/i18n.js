@@ -56,6 +56,21 @@ export function moodLabel(value, lang) {
   return T[lang].moods[key] || EXTRA_MOODS[key]?.[lang] || ""
 }
 
+// Turns Supabase auth/database errors into short messages people can act on.
+export function friendlyError(error, t) {
+  const text = String(error?.message || error || "").toLowerCase()
+  const code = String(error?.code || "").toLowerCase()
+  if (code.includes("rate_limit") || text.includes("rate limit")) return t.errors.rate
+  if (code === "invalid_credentials" || text.includes("invalid login")) return t.errors.invalidLogin
+  if (code === "email_not_confirmed" || text.includes("not confirmed")) return t.errors.notConfirmed
+  if (code.includes("user_already_exists") || text.includes("already registered")) return t.errors.exists
+  if (code.includes("weak_password") || text.includes("password should be")) return t.errors.weakPassword
+  if (code.includes("email_address_invalid") || text.includes("invalid format") || text.includes("is invalid")) return t.errors.invalidEmail
+  if (text.includes("failed to fetch") || text.includes("network")) return t.errors.network
+  console.warn("Unhandled error:", error)
+  return t.errors.generic
+}
+
 export const T = {
   en: {
     locale: "en-US",
@@ -69,6 +84,16 @@ export const T = {
     msgNeedActivity: "Add an activity first.",
     msgSessionEnded: "Your session has ended. Please sign in again.",
     msgSaved: "Entry saved.",
+    errors: {
+      rate: "Too many sign-up emails were sent in the last hour. Please try again a bit later.",
+      invalidLogin: "Wrong email or password.",
+      notConfirmed: "Please confirm your email first — check your inbox and spam folder.",
+      exists: "An account with this email already exists. Try signing in.",
+      weakPassword: "The password is too short — use at least 6 characters.",
+      invalidEmail: "This email address doesn't look right.",
+      network: "No connection. Check your internet and try again.",
+      generic: "Something went wrong. Please try again.",
+    },
 
     landingTag: "Personal energy system",
     landingEyebrow: "Welcome to Thrive",
@@ -175,6 +200,16 @@ export const T = {
     msgNeedActivity: "Напиши, чем ты занимался(ась).",
     msgSessionEnded: "Сессия завершилась. Войди в аккаунт ещё раз.",
     msgSaved: "Запись сохранена.",
+    errors: {
+      rate: "За последний час отправлено слишком много писем для регистрации. Попробуй чуть позже.",
+      invalidLogin: "Неверная почта или пароль.",
+      notConfirmed: "Сначала подтверди почту — проверь входящие и папку «Спам».",
+      exists: "Аккаунт с этой почтой уже есть. Попробуй войти.",
+      weakPassword: "Пароль слишком короткий — нужно не меньше 6 символов.",
+      invalidEmail: "Похоже, адрес почты указан с ошибкой.",
+      network: "Нет соединения. Проверь интернет и попробуй ещё раз.",
+      generic: "Что-то пошло не так. Попробуй ещё раз.",
+    },
 
     landingTag: "Личная система энергии",
     landingEyebrow: "Добро пожаловать в Thrive",

@@ -238,6 +238,19 @@ select {
   padding-right: 24px;
 }
 input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: var(--felt); }
+/* Stable single-line fields: fixed line box so autofilled values and password dots stay centred */
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]) { height: 48px; line-height: 24px; }
+input[type="password"] { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .12em; }
+/* Browser autofill keeps the page's colours instead of a blue/yellow fill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--obsidian);
+  -webkit-box-shadow: 0 0 0 1000px var(--paper) inset;
+  box-shadow: 0 0 0 1000px var(--paper) inset;
+  caret-color: var(--obsidian);
+  transition: background-color 9999s ease-out 0s;
+}
 input::placeholder, textarea::placeholder { color: var(--ash); font-weight: 300; }
 textarea { resize: vertical; line-height: 1.58; }
 

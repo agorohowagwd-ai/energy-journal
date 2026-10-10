@@ -10,7 +10,7 @@ import {
   ReferenceDot,
 } from "recharts"
 import { supabase } from "./supabase"
-import { T, initialLang, saveLang, categoryLabel, moodLabel } from "./i18n"
+import { T, initialLang, saveLang, categoryLabel, moodLabel, friendlyError } from "./i18n"
 import AnchorsBackground from "./AnchorsBackground"
 import "./App.css"
 
@@ -83,7 +83,7 @@ export default function App() {
 
     supabase.auth.getSession().then(({ data, error }) => {
       if (!mounted) return
-      if (error) setErrorMessage(error.message)
+      if (error) setErrorMessage(friendlyError(error, t))
       setSession(data?.session ?? null)
       if (data?.session) {
         setView("app")
@@ -116,7 +116,7 @@ export default function App() {
       .order("created_at", { ascending: false })
 
     if (error) {
-      setErrorMessage(error.message)
+      setErrorMessage(friendlyError(error, t))
       return
     }
     setEntries(data ?? [])
@@ -136,7 +136,7 @@ export default function App() {
 
     setLoading(false)
     if (error) {
-      setErrorMessage(error.message)
+      setErrorMessage(friendlyError(error, t))
       return
     }
 
@@ -157,7 +157,7 @@ export default function App() {
 
     setLoading(false)
     if (error) {
-      setErrorMessage(error.message)
+      setErrorMessage(friendlyError(error, t))
       return
     }
 
@@ -168,7 +168,7 @@ export default function App() {
   async function logout() {
     setErrorMessage("")
     const { error } = await supabase.auth.signOut()
-    if (error) setErrorMessage(error.message)
+    if (error) setErrorMessage(friendlyError(error, t))
     else {
       setSession(null)
       setEntries([])
@@ -206,7 +206,7 @@ export default function App() {
 
     setSaving(false)
     if (error) {
-      setErrorMessage(error.message)
+      setErrorMessage(friendlyError(error, t))
       return
     }
 
