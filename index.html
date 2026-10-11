@@ -7,8 +7,34 @@
     <title>Thrive</title>
     <meta name="theme-color" content="#000000" />
   </head>
-  <body>
+  <body style="background:#000">
     <div id="root"></div>
+    <!-- If the app cannot start (old browser, failed download, crash), show why instead of a blank page. -->
+    <script>
+      (function () {
+        function show(message) {
+          if (document.getElementById("boot-error")) return
+          var box = document.createElement("div")
+          box.id = "boot-error"
+          box.style.cssText = "position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:#000;color:#fff;font:15px/1.5 system-ui,sans-serif;z-index:99999"
+          box.innerHTML = '<div style="max-width:520px"><div style="font-size:18px;margin-bottom:12px">Thrive не смог загрузиться</div>' +
+            '<div style="opacity:.75;margin-bottom:16px">Обновите страницу (Ctrl+Shift+R) или откройте сайт в другом браузере.</div>' +
+            '<code style="display:block;white-space:pre-wrap;opacity:.6;font-size:12px"></code></div>'
+          box.querySelector("code").textContent = String(message || "").slice(0, 400)
+          document.body.appendChild(box)
+        }
+        window.__thriveBootError = show
+        window.addEventListener("error", function (e) {
+          if (!document.getElementById("root").children.length) show((e.message || "Script error") + (e.filename ? " @ " + e.filename.split("/").pop() + ":" + e.lineno : ""))
+        }, true)
+        window.addEventListener("unhandledrejection", function (e) {
+          if (!document.getElementById("root").children.length) show("Promise: " + (e.reason && e.reason.message || e.reason))
+        })
+        setTimeout(function () {
+          if (!document.getElementById("root").children.length) show("The app did not start within 12 seconds.")
+        }, 12000)
+      })()
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

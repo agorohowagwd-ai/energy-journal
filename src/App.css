@@ -590,9 +590,9 @@ textarea { resize: vertical; line-height: 1.58; }
 
 .hero-band { align-items: stretch; }
 .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; padding-right: 150px; }
-.hero-band .hero-row .page-heading { width: auto; margin: 0; max-width: 640px; }
-.hero-spark { display: flex; align-items: flex-end; gap: 24px; color: var(--paper); flex-shrink: 1; min-width: 0; }
-.hero-spark-chart { display: grid; gap: 8px; width: 320px; max-width: 100%; }
+.hero-band .hero-row .page-heading { width: auto; margin: 0; max-width: 640px; min-width: 0; flex: 1 1 auto; }
+.hero-spark { display: flex; align-items: flex-end; gap: 24px; color: var(--paper); flex-shrink: 0; }
+.hero-spark-chart { display: grid; gap: 8px; width: clamp(180px, 22vw, 320px); flex-shrink: 0; }
 .spark { width: 100%; height: auto; display: block; }
 .hero-spark-label { color: rgba(255, 255, 255, .7); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 .hero-add {
